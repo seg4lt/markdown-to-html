@@ -4,7 +4,7 @@ const CliArgs = struct {
     app_name: []const u8 = "Demo",
     base_path: []const u8 = "example",
     output_path: []const u8 = "dist",
-    templates_folder: []const u8 = "__templates",
+    tmpl_path: []const u8 = "__templates",
 };
 
 // TODO(seg4lt)
@@ -23,58 +23,130 @@ pub fn main() !void {
 
     std.fs.cwd().makePath(args.output_path) catch |err| if (err != error.PathAlreadyExists) return err;
 
-    // Need to find better position
-    const main_nav_html = try createMainNav(gpa, args.base_path, args.app_name);
-    defer gpa.free(main_nav_html);
+    var tmpl_manager = TemplateManager.init(gpa, args.base_path, args.tmpl_path, args.app_name);
+    defer tmpl_manager.map.deinit();
+    try tmpl_manager.copyDefaultFiles(args.output_path);
+    _ = try tmpl_manager.getMainNav();
 
     var dir = try std.fs.cwd().openDir(args.base_path, .{ .iterate = true });
     defer dir.close();
-    try walkDir(gpa, args.output_path, dir, "", main_nav_html);
+    try walkDir(gpa, args.output_path, dir, "", &tmpl_manager);
 }
 
-pub fn createMainNav(gpa: Allocator, base_path: []const u8, app_name: []const u8) ![]const u8 {
-    var dir = try std.fs.cwd().openDir(base_path, .{ .iterate = true });
-    defer dir.close();
-    var top_level_dirs: ArrayList([]const u8) = .empty;
-    defer top_level_dirs.deinit(gpa);
+const TemplateManager = struct {
+    gpa: Allocator,
+    map: std.StringHashMap([]const u8),
+    base_path: []const u8,
+    tmpl_path: []const u8,
+    app_name: []const u8,
 
-    var it = dir.iterate();
-    while (try it.next()) |dir_entry| {
-        if (dir_entry.kind == .directory) {
-            try top_level_dirs.append(gpa, dir_entry.name);
+    const COPY_FILES = [_][]const u8{
+        "styles.css",
+    };
+
+    pub fn init(gpa: Allocator, base_path: []const u8, tmpl_path: []const u8, app_name: []const u8) TemplateManager {
+        return .{
+            .gpa = gpa,
+            .base_path = base_path,
+            .tmpl_path = tmpl_path,
+            .app_name = app_name,
+            .map = std.StringHashMap([]const u8).init(gpa),
+        };
+    }
+    pub fn deinit(self: *@This()) void {
+        self.map.deinit();
+    }
+
+    pub fn getMainNav(self: *@This()) ![]const u8 {
+        const NAV_MENU_KEY = "__main_nav__";
+
+        if (self.map.get(NAV_MENU_KEY)) |nav| {
+            return nav;
+        }
+
+        var dir = try std.fs.cwd().openDir(self.base_path, .{ .iterate = true });
+        defer dir.close();
+        var top_level_dirs: ArrayList([]const u8) = .empty;
+        defer top_level_dirs.deinit(self.gpa);
+
+        var it = dir.iterate();
+        while (try it.next()) |dir_entry| {
+            if (dir_entry.kind == .directory and !mem.eql(u8, dir_entry.name, self.tmpl_path)) {
+                try top_level_dirs.append(self.gpa, dir_entry.name);
+            }
+        }
+        var accumulator = std.io.Writer.Allocating.init(self.gpa);
+        var writer = &accumulator.writer;
+        try writer.print(
+            \\<nav class="main-nav">
+            \\    <div class="nav-container">
+            \\        <a href="/" class="nav-logo">{s}</a>
+            \\        <ul class="nav-links">
+        , .{self.app_name});
+        for (top_level_dirs.items) |dir_name| {
+            try writer.print(
+                \\<li><a href="/{s}/">{s}</a></li>
+            , .{ dir_name, dir_name });
+        }
+        try writer.print(
+            \\        </ul>
+            \\    </div>
+            \\</nav>
+        , .{});
+
+        const nav_menu = try accumulator.toOwnedSlice();
+        try self.map.put(NAV_MENU_KEY, nav_menu);
+        return nav_menu;
+    }
+
+    pub fn copyDefaultFiles(self: *@This(), output_path: []const u8) !void {
+        for (COPY_FILES) |file_name| {
+            const src_path = try std.fs.path.join(self.gpa, &[_][]const u8{ self.base_path, self.tmpl_path, file_name });
+            defer self.gpa.free(src_path);
+
+            const dest_path = try std.fs.path.join(self.gpa, &[_][]const u8{ output_path, file_name });
+            defer self.gpa.free(dest_path);
+
+            const content = std.fs.cwd().readFileAlloc(self.gpa, src_path, MAX_FILE_SIZE) catch |err| {
+                if (err == error.FileNotFound) {
+                    std.log.warn("file {s} not found for copying, skipping copy.", .{src_path});
+                    break;
+                } else {
+                    return err;
+                }
+            };
+            defer self.gpa.free(content);
+
+            const output_file = try std.fs.cwd().createFile(dest_path, .{});
+            defer output_file.close();
+            try output_file.writeAll(content);
         }
     }
-    var accumulator = std.io.Writer.Allocating.init(gpa);
-    var writer = &accumulator.writer;
-    try writer.print(
-        \\<nav class="main-nav">
-        \\    <div class="nav-container">
-        \\        <a href="/" class="nav-logo">{s}</a>
-        \\        <ul class="nav-links">
-    , .{app_name});
-    for (top_level_dirs.items) |dir_name| {
-        try writer.print(
-            \\<li><a href="/{s}/">{s}</a></li>
-        , .{ dir_name, dir_name });
-    }
-    try writer.print(
-        \\        </ul>
-        \\    </div>
-        \\</nav>
-    , .{});
-    return try accumulator.toOwnedSlice();
-}
 
-pub fn walkDir(gpa: Allocator, output_path: []const u8, dir: Dir, relative_path: []const u8, main_nav_html: []const u8) !void {
+    pub fn getTemplate(self: *@This(), name: []const u8) ?[]const u8 {
+        if (self.map.get(name)) |template| {
+            return template;
+        }
+        const path = try std.fs.path.join(self.gpa, &[_][]const u8{ self.base_path, self.tmpl_path, name });
+        defer self.gpa.free(path);
+
+        const content = try std.fs.cwd().readFileAlloc(self.gpa, path, MAX_FILE_SIZE);
+        try self.map.put(name, content);
+        return content;
+    }
+};
+
+pub fn walkDir(gpa: Allocator, output_path: []const u8, dir: Dir, relative_path: []const u8, tm: *TemplateManager) !void {
     var it = dir.iterate();
 
     while (try it.next()) |dir_entry| {
         switch (dir_entry.kind) {
             .file => {
                 if (!mem.endsWith(u8, dir_entry.name, ".md")) continue;
-                try generateHtml(gpa, output_path, dir, relative_path, dir_entry.name, main_nav_html);
+                try generateHtml(gpa, output_path, dir, relative_path, dir_entry.name, tm);
             },
             .directory => {
+                if (mem.eql(u8, dir_entry.name, tm.tmpl_path)) continue;
                 @panic("not implemented");
             },
             else => |tag| std.debug.panic("{s} not implemented", .{@tagName(tag)}),
@@ -82,7 +154,7 @@ pub fn walkDir(gpa: Allocator, output_path: []const u8, dir: Dir, relative_path:
     }
 }
 
-fn generateHtml(gpa: Allocator, output_base: []const u8, dir: Dir, relative_path: []const u8, file_name: []const u8, main_nav_html: []const u8) !void {
+fn generateHtml(gpa: Allocator, output_base: []const u8, dir: Dir, relative_path: []const u8, file_name: []const u8, tm: *TemplateManager) !void {
     const html_name = try std.mem.replaceOwned(u8, gpa, file_name, ".md", ".html");
     defer gpa.free(html_name);
 
@@ -108,7 +180,7 @@ fn generateHtml(gpa: Allocator, output_base: []const u8, dir: Dir, relative_path
     const full_html = try generator.replacePlaceholdersOwned(
         tmpl.DEFAULT_BASE_HTML,
         &[_][]const u8{ "{{title}}", "{{content}}", "{{main_nav}}" },
-        &[_][]const u8{ doc.nodes.items[0].h1, html, main_nav_html },
+        &[_][]const u8{ doc.nodes.items[0].h1, html, try tm.getMainNav() },
     );
     defer gpa.free(full_html);
 
@@ -149,16 +221,47 @@ const HtmlGenerator = struct {
     fn generateNode(self: *@This(), node: Node) Error!void {
         const final_html = switch (node) {
             .h1, .h2, .h3, .h4 => try self.generateHeading(node),
+            .p => |text| try self.generateParagraph(text),
+            .code => |code_block| try self.generateCodeBlock(code_block),
+            .magic_marker => |marker| try self.generateMagicMarker(marker),
         };
         defer self.gpa.free(final_html);
         try self.accumulator.writer.print("\n{s}\n", .{final_html});
         try self.accumulator.writer.flush();
     }
 
+    fn generateMagicMarker(self: *@This(), marker: Node.MagicMarker) Error![]u8 {
+        _ = self;
+        _ = marker;
+        @panic("... not implemented ...");
+    }
+
+    fn generateCodeBlock(self: *@This(), code_block: Node.CodeBlock) Error![]u8 {
+        const class_attr = if (code_block.language) |lang|
+            try std.fmt.allocPrint(self.gpa, " class=\"language-{s}\"", .{lang})
+        else
+            "";
+        defer self.gpa.free(class_attr);
+
+        const tmpl_str = tmpl.DEFAULT_CODE_BLOCK;
+        const final_html = try self.replacePlaceholdersOwned(
+            tmpl_str,
+            &[_][]const u8{ "{{class}}", "{{content}}" },
+            &[_][]const u8{ class_attr, code_block.content },
+        );
+        return final_html;
+    }
+
+    fn generateParagraph(self: *@This(), p_content: []const u8) Error![]u8 {
+        return std.fmt.allocPrint(self.gpa,
+            \\ <p>{s}</p>
+        , .{p_content});
+    }
+
     fn generateHeading(self: *@This(), node: Node) Error![]u8 {
         const text = switch (node) {
             .h1, .h2, .h3, .h4 => |text| text,
-            // else => std.debug.panic("** bug ** not reachable - only heading should reach here", .{}),
+            else => std.debug.panic("** bug ** not reachable - only heading should reach here", .{}),
         };
         const tmpl_str = tmpl.DEFAULT_HEADING_HTML;
         const final_html = try self.replacePlaceholdersOwned(
@@ -207,6 +310,20 @@ const Node = union(enum) {
     h2: []const u8,
     h3: []const u8,
     h4: []const u8,
+    p: []const u8,
+    code: CodeBlock,
+    magic_marker: MagicMarker,
+
+    const CodeBlock = struct {
+        content: []const u8,
+        language: ?[]const u8,
+    };
+
+    const MagicMarker = struct {
+        name: []const u8,
+        args: ?[]const u8,
+        data: ?CodeBlock, // JSON data
+    };
 };
 
 const Tokenizer = struct {
@@ -265,7 +382,7 @@ const Parser = struct {
     tokenizer: Tokenizer,
     gpa: Allocator,
 
-    pub const ParseError = error{OutOfMemory};
+    pub const ParseError = error{ OutOfMemory, InvalidMagicMarker };
 
     pub fn init(gpa: Allocator, source: []const u8) Parser {
         return .{
@@ -284,15 +401,115 @@ const Parser = struct {
         self.tokenizer.skipWhitespace();
 
         const ch = self.tokenizer.peek() orelse return;
-        switch (ch) {
-            '\n' => {
-                _ = self.tokenizer.advance();
-                return;
-            },
-            '#' => try self.parseHeading(),
-            else => std.debug.panic("{s} I don't understand this\n", .{&[_]u8{ch}}),
+        if (ch == '\n') {
+            _ = self.tokenizer.advance();
+            return;
         }
+
+        if (self.isHeading()) {
+            try self.parseHeading();
+            return;
+        }
+
+        if (self.isCodeBlock()) {
+            try self.parseCodeBlock();
+            return;
+        }
+
+        if (self.isMagicMarker()) {
+            try self.parseMagicMarker();
+            return;
+        }
+
+        try self.parseParagraph();
     }
+
+    fn isMagicMarker(self: *@This()) bool {
+        const line = self.tokenizer.peekLine();
+        return mem.startsWith(u8, line, tmpl.MAGIC_MARKER_PREFIX); // e.g., :::chart
+    }
+
+    fn parseMagicMarker(self: *@This()) ParseError!void {
+        const line = self.tokenizer.consumeLine();
+        var token_it = std.mem.tokenizeScalar(u8, line, ' ');
+        _ = token_it.next(); // consume {{
+        const marker_name = token_it.next() orelse return ParseError.InvalidMagicMarker;
+        const marker_args = token_it.next();
+        var marker_data: ?Node.CodeBlock = null;
+
+        if (mem.startsWith(u8, self.tokenizer.peekLine(), tmpl.MATIC_INCLUDE_HTML_DATA)) {
+            const node = try self.parseCodeBlockGetNode();
+            marker_data = node.code;
+        }
+        const node: Node = .{
+            .magic_marker = .{
+                .name = marker_name,
+                .args = marker_args,
+                .data = marker_data,
+            },
+        };
+        try self.document.nodes.append(self.document.gpa, node);
+    }
+
+    fn isCodeBlock(self: *@This()) bool {
+        const line = self.tokenizer.peekLine();
+        return mem.startsWith(u8, line, "```");
+    }
+
+    fn parseCodeBlockGetNode(self: *@This()) ParseError!Node {
+        var acc: ArrayList(u8) = .empty;
+        defer acc.deinit(self.gpa);
+
+        const opening_line = self.tokenizer.consumeLine(); // consume opening ```
+
+        // Extract language (if any)
+        const lang = if (opening_line.len > 3)
+            try self.document.gpa.dupe(u8, opening_line[3..])
+        else
+            null;
+
+        while (!self.tokenizer.isAtEnd()) {
+            const line = self.tokenizer.peekLine();
+            if (mem.startsWith(u8, line, "```")) {
+                _ = self.tokenizer.consumeLine(); // consume closing ```
+                break;
+            }
+            const code_line = self.tokenizer.consumeLine();
+            try acc.appendSlice(self.gpa, code_line);
+            try acc.append(self.gpa, '\n');
+        }
+
+        const node: Node = .{
+            .code = .{
+                .content = try acc.toOwnedSlice(self.document.gpa),
+                .language = lang,
+            },
+        };
+        return node;
+    }
+
+    fn parseCodeBlock(self: *@This()) ParseError!void {
+        const node = try self.parseCodeBlockGetNode();
+        try self.document.nodes.append(self.document.gpa, node);
+    }
+
+    fn parseParagraph(self: *@This()) ParseError!void {
+        var acc: ArrayList(u8) = .empty;
+        while (!self.tokenizer.isAtEnd()) {
+            const line = self.tokenizer.consumeLine();
+            try acc.appendSlice(self.gpa, line);
+
+            if (self.isHeading()) break;
+            if (self.isCodeBlock()) break;
+        }
+        const node: Node = .{ .p = try acc.toOwnedSlice(self.document.gpa) };
+        try self.document.nodes.append(self.document.gpa, node);
+    }
+
+    fn isHeading(self: *@This()) bool {
+        return self.tokenizer.peek() == '#';
+    }
+
     fn parseHeading(self: *@This()) ParseError!void {
         var level: usize = 0;
         while (self.tokenizer.peek() == '#') {
