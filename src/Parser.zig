@@ -18,7 +18,7 @@ fn walkDir(gpa: Allocator, dir: Dir, relative_path: []const u8, tmpl_path: []con
                 const doc_path = try gpa.dupe(u8, relative_path);
                 const file_name = try gpa.dupe(u8, dir_entry.name);
 
-                std.log.debug("Parsing: {s}", .{dir_entry.name});
+                std.log.debug("Parsing: {s}/{s}", .{ doc_path, file_name });
 
                 const md_content = try dir.readFileAlloc(gpa, dir_entry.name, common.MAX_FILE_SIZE);
                 defer gpa.free(md_content);
@@ -113,13 +113,27 @@ const Parser = struct {
         const line = self.tokenizer.consumeLine();
         var token_it = std.mem.tokenizeScalar(u8, line, ' ');
         _ = token_it.next(); // consume {{
-        const marker_name = token_it.next() orelse return ParseError.InvalidMagicMarker;
-        const marker_args = token_it.next();
+        const marker_name = try self.gpa.dupe(u8, token_it.next() orelse return ParseError.InvalidMagicMarker);
+        const marker_args = if (token_it.next()) |arg| try self.gpa.dupe(u8, arg) else null;
+        var marker_data: ?std.json.Parsed(std.json.Value) = null;
+
+        if (self.isCodeBlock()) {
+            const code_block_line = self.tokenizer.peekLine();
+            if (mem.startsWith(u8, code_block_line, tmpl.MAGIC_INCLUDE_HTML_DATA)) {
+                const block = try self.parseCodeBlockGetNode();
+                marker_data = std.json.parseFromSlice(std.json.Value, self.gpa, block.code.content, .{}) catch |err| {
+                    std.log.err("Failed to parse JSON in magic marker '{s}' at {s}: {any}", .{ marker_name, self.file_path, err });
+                    std.log.err("JSON content:\n{s}", .{block.code.content});
+                    return err;
+                };
+            }
+        }
 
         const node: Node = .{
             .magic_marker = .{
                 .name = marker_name,
                 .args = marker_args,
+                .data = marker_data,
             },
         };
         try self.nodes.append(self.gpa, node);

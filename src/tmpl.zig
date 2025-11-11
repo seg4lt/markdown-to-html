@@ -1,6 +1,6 @@
 pub const MAGIC_MARKER_PREFIX = "{{ @@";
 pub const MAGIC_INCLUDE_HTML = "@@include_html";
-pub const MATIC_INCLUDE_HTML_DATA = "```@@include_html_data";
+pub const MAGIC_INCLUDE_HTML_DATA = "```@@include_html_data";
 pub const MAGIC_BLOG_LIST = "@@blog_list";
 pub const MAGIC_FRONTMATTER = "@@frontmatter";
 
@@ -46,4 +46,22 @@ pub const DEFAULT_HEADING_HTML =
 
 pub const DEFAULT_CODE_BLOCK =
     \\    <pre><code{{class}}>{{content}}</code></pre>
+;
+
+pub const DEFAULT_BLOG_LIST_HTML =
+    \\<section class="blog-list">
+    \\    <h2>Recent Blogs</h2>
+    \\    <ul class="blog-list-item">
+    \\        {{content}}
+    \\    </ul>
+    \\</section>
+;
+pub const DEFAULT_BLOG_LIST_ITEM_HTML =
+    \\ <li class="blog-list-item">
+    \\     <a href="{{link}}" class="blog-list-item-link">
+    \\         <div class="blog-list-item-title">{{title}}</div>
+    \\         <div class="blog-list-item-desc">{{desc}}</div>
+    \\         <div class="blog-list-item-date">{{date}}</div>
+    \\    </a>
+    \\ </li>
 ;

@@ -11,6 +11,8 @@
 ### This is heading 3
 #### This is heading 4
 
+{{ @@blog_list }}
+
 
 normal paragraph
 

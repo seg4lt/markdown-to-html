@@ -1,17 +1,44 @@
+const DocInfo = struct {
+    file_path: []const u8,
+    file_name: []const u8,
+    frontmatter: *const Frontmatter,
+};
+
 pub fn generateAll(gpa: Allocator, docs: *const ArrayList(Document), output_base: []const u8, tmpl_manager: *TemplateManager) !void {
-    var map = std.StringHashMap(*ArrayList(*const ParsedFrontmatter)).init(gpa);
-    for (docs.items) |doc| {
-        const result = try map.getOrPut(doc.file_path);
+    var groups = std.StringHashMap(*ArrayList(DocInfo)).init(gpa);
+    for (docs.items) |*doc| {
+        std.log.debug("title({s}) file_path({s}), file_name({s})", .{ doc.frontmatter.value.title, doc.file_path, doc.file_name });
+
+        const result = try groups.getOrPut(doc.file_path);
         if (!result.found_existing) {
-            const list = try gpa.create(ArrayList(*const ParsedFrontmatter));
+            const list = try gpa.create(ArrayList(DocInfo));
             list.* = .empty;
             result.value_ptr.* = list;
         }
-        try result.value_ptr.*.append(gpa, &doc.frontmatter);
+        try result.value_ptr.*.append(gpa, .{
+            .file_path = doc.file_path,
+            .file_name = doc.file_name,
+            .frontmatter = &doc.frontmatter.value,
+        });
+
+        // blog is special, so we collect sub items as well
+        if (mem.startsWith(u8, doc.file_path, "blog/")) {
+            const blog_result = try groups.getOrPut("blog");
+            if (!blog_result.found_existing) {
+                const list = try gpa.create(ArrayList(DocInfo));
+                list.* = .empty;
+                blog_result.value_ptr.* = list;
+            }
+            try blog_result.value_ptr.*.append(gpa, .{
+                .file_path = doc.file_path,
+                .file_name = doc.file_name,
+                .frontmatter = &doc.frontmatter.value,
+            });
+        }
     }
 
     for (docs.items) |*doc| {
-        var generator = HtmlGenerator.init(gpa, doc, output_base, tmpl_manager, &map);
+        var generator = HtmlGenerator.init(gpa, doc, output_base, tmpl_manager, &groups);
         const html = try generator.generate();
 
         // Apply base template with main_nav
@@ -45,14 +72,18 @@ const HtmlGenerator = struct {
     document: *const Document,
     output_path: []const u8,
     template_manager: *TemplateManager,
-    groups: *const std.StringHashMap(*ArrayList(*const ParsedFrontmatter)),
+    groups: *const std.StringHashMap(*ArrayList(DocInfo)),
     accumulator: std.Io.Writer.Allocating,
 
     const Self = @This();
 
-    const Error = error{ OutOfMemory, WriteFailed };
+    const Error = error{
+        OutOfMemory,
+        WriteFailed,
+        UnknownMagicMarker,
+    };
 
-    fn init(gpa: Allocator, doc: *const Document, output_path: []const u8, template_manager: *TemplateManager, groups: *std.StringHashMap(*ArrayList(*const ParsedFrontmatter))) @This() {
+    fn init(gpa: Allocator, doc: *const Document, output_path: []const u8, template_manager: *TemplateManager, groups: *std.StringHashMap(*ArrayList(DocInfo))) @This() {
         return .{
             .gpa = gpa,
             .output_path = output_path,
@@ -87,9 +118,43 @@ const HtmlGenerator = struct {
     }
 
     fn generateMagicMarker(self: *@This(), marker: Node.MagicMarker) Error![]u8 {
-        _ = self;
+        if (mem.eql(u8, marker.name, tmpl.MAGIC_BLOG_LIST)) {
+            return try self.generateBlogList(marker);
+        }
+        std.log.err("unknown magic marker -- `{s}`", .{marker.name});
+        return Error.UnknownMagicMarker;
+
+        // if (marker.data) |data| {
+        //     std.log.debug(">>>> {any}", .{data.value});
+        // } else {
+        //     std.log.debug(">>>> null", .{});
+        // }
+        // @panic("... not implemented ...");
+    }
+
+    fn generateBlogList(self: *@This(), marker: Node.MagicMarker) Error![]u8 {
         _ = marker;
-        @panic("... not implemented ...");
+        const blog_list = self.groups.get("blog") orelse return "";
+
+        var list_accum = std.io.Writer.Allocating.init(self.gpa);
+        // TODO(seg4lt) - need to sort by date desc, but let's do that later
+        for (blog_list.items) |info| {
+            const link = try std.fmt.allocPrint(self.gpa, "{s}/{s}.html", .{ info.file_path, info.file_name[0..info.file_name.len-3]}); // remove .md
+            defer self.gpa.free(link);
+            const item_html = try self.replacePlaceholdersOwned(
+                tmpl.DEFAULT_BLOG_LIST_ITEM_HTML,
+                &[_][]const u8{ "{{link}}", "{{title}}", "{{desc}}", "{{date}}" },
+                &[_][]const u8{ link, info.frontmatter.title, info.frontmatter.description, info.frontmatter.date },
+            );
+            defer self.gpa.free(item_html);
+            try list_accum.writer.print("{s}\n", .{item_html});
+        }
+        const blog_list_html = try self.replacePlaceholdersOwned(
+            tmpl.DEFAULT_BLOG_LIST_HTML,
+            &[_][]const u8{"{{content}}"},
+            &[_][]const u8{try list_accum.toOwnedSlice()},
+        );
+        return blog_list_html;
     }
 
     fn generateCodeBlock(self: *@This(), code_block: Node.CodeBlock) Error![]u8 {

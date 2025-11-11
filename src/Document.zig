@@ -39,6 +39,7 @@ pub const Node = union(enum) {
     pub const MagicMarker = struct {
         name: []const u8,
         args: ?[]const u8,
+        data: ?std.json.Parsed(std.json.Value),
     };
 };
 
