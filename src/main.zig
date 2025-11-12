@@ -26,11 +26,12 @@ pub fn main() !void {
     // Mainly needed for blog list and blog series support
     const docs = try Parser.parseFromDirPath(gpa, args.base_path, args.tmpl_path);
 
-    try HtmlGenerator.generateAll(gpa, &docs, args.output_path, &tmpl_manager);
+    try HtmlGenerator.generateAll(gpa, &docs, args.app_name, args.app_subtitle, args.output_path, &tmpl_manager);
 }
 
 const Clap = struct {
-    app_name: []const u8 = "Demo",
+    app_name: []const u8 = "m2h",
+    app_subtitle: []const u8 = "Markdown to HTML generator written in Zig",
     base_path: []const u8 = "example",
     output_path: []const u8 = "dist",
     tmpl_path: []const u8 = "__templates",

@@ -27,16 +27,32 @@ pub fn get(self: *Self, tmpl_name: []const u8) ![]const u8 {
     if (self.map.get(tmpl_name)) |tmpl_content| {
         return tmpl_content;
     }
-    const file_path = try std.fs.path.join(self.gpa, &[_][]const u8{
-        self.base_path,
-        self.tmpl_path,
-        tmpl_name,
-    });
-    defer self.gpa.free(file_path);
-
-    const file_content = try std.fs.cwd().readFileAlloc(self.gpa, file_path, common.MAX_FILE_SIZE);
+    const file_content = try findOverride(self.gpa, self.base_path, self.tmpl_path, tmpl_name) orelse blk: {
+        for (tmpl.TEMPLATES) |template| {
+            if (mem.eql(u8, template.name, tmpl_name)) {
+                break :blk template.content;
+            }
+        }
+        std.log.err("{s} template not found",.{tmpl_name});
+        return error.TemplateNotFound;
+    };
 
     try self.map.put(tmpl_name, file_content);
+    return file_content;
+}
+
+fn findOverride(gpa: Allocator, base_path: []const u8, tmpl_path: []const u8, tmpl_name: []const u8) !?[]const u8 {
+    const file_path = try std.fs.path.join(gpa, &[_][]const u8{
+        base_path,
+        tmpl_path,
+        tmpl_name,
+    });
+    defer gpa.free(file_path);
+
+    const file_content = std.fs.cwd().readFileAlloc(gpa, file_path, common.MAX_FILE_SIZE) catch |err| {
+        if (err == error.FileNotFound) return null;
+        return err;
+    };
     return file_content;
 }
 
@@ -66,11 +82,19 @@ pub fn getMainNav(self: *Self) ![]const u8 {
         const link = try std.fmt.allocPrint(self.gpa, "/{s}/", .{dir_name});
         defer self.gpa.free(link);
 
+        const nav_link = try replacePlaceholders(
+            self.gpa,
+            try self.get(tmpl.TMPL_BUTTON_LINK.name),
+            &[_][]const u8{ "{{link}}", "{{text}}" },
+            &[_][]const u8{ link, dir_name },
+        );
+        defer self.gpa.free(nav_link);
+
         const nav_item = try replacePlaceholders(
             self.gpa,
-            tmpl.DEFAULT_MAIN_NAV_ITEM_HTML,
-            &[_][]const u8{ "{{link}}", "{{title}}" },
-            &[_][]const u8{ link, dir_name },
+            try self.get(tmpl.TMPL_MAIN_NAV_ITEM_HTML.name),
+            &[_][]const u8{"{{item}}"},
+            &[_][]const u8{nav_link},
         );
         defer self.gpa.free(nav_item);
 
@@ -85,9 +109,9 @@ pub fn getMainNav(self: *Self) ![]const u8 {
 
     const nav_menu = try replacePlaceholders(
         self.gpa,
-        tmpl.DEFAULT_MAIN_NAV_HTML,
-        &[_][]const u8{ "{{app_name}}", "{{nav_items}}" },
-        &[_][]const u8{ self.app_name, nav_items },
+        try self.get(tmpl.TMPL_MAIN_NAV_HTML.name),
+        &[_][]const u8{"{{nav_items}}"},
+        &[_][]const u8{nav_items},
     );
     try self.map.put(NAV_MENU_KEY, nav_menu);
     return nav_menu;
@@ -103,16 +127,16 @@ pub fn copyDefaultFiles(self: *Self, output_path: []const u8) !void {
         const dest_path = try std.fs.path.join(self.gpa, &[_][]const u8{ output_path, file_name });
         defer self.gpa.free(dest_path);
 
-        // Try to read from template folder first
+        // TODO(seg4lt)
+        // just created findOverride proc, maybe use that here later
         const content = std.fs.cwd().readFileAlloc(self.gpa, src_path, MAX_FILE_SIZE) catch |err| {
             if (err == error.FileNotFound) {
-                // Fallback to default styles from tmpl.zig
                 std.log.info("Template file {s} not found, using default from tmpl.zig", .{file_name});
                 const default_content = if (mem.eql(u8, file_name, "styles.css"))
                     tmpl.DEFAULT_STYLES
                 else
                     null;
-                
+
                 if (default_content) |content_str| {
                     const output_file = try std.fs.cwd().createFile(dest_path, .{});
                     defer output_file.close();

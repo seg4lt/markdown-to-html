@@ -16,6 +16,9 @@ pub const TMPL_BLOG_SERIES_SECTION_WRAPPER_HTML: Template = .{ .name = "blog_ser
 pub const TMPL_BLOG_SERIES_TOC_ITEM_HTML: Template = .{ .name = "blog_series_toc_item.html", .content = DEFAULT_BLOG_SERIES_TOC_ITEM_HTML };
 pub const TMPL_MAIN_NAV_HTML: Template = .{ .name = "main_nav.html", .content = DEFAULT_MAIN_NAV_HTML };
 pub const TMPL_MAIN_NAV_ITEM_HTML: Template = .{ .name = "main_nav_item.html", .content = DEFAULT_MAIN_NAV_ITEM_HTML };
+pub const TMPL_TEXT_LINK: Template = .{ .name = "text_link.html", .content = DEFAULT_TEXT_LINK_HTML };
+pub const TMPL_TEXT_LINK_ALT: Template = .{ .name = "text_link_alt.html", .content = DEFAULT_TEXT_LINK_ALT_HTML };
+pub const TMPL_BUTTON_LINK: Template = .{ .name = "button_link.html", .content = DEFAULT_BUTTON_LINK_HTML };
 pub const TMPL_STYLES_CSS: Template = .{ .name = "styles.css", .content = DEFAULT_STYLES };
 
 pub const TEMPLATES = [_]Template{
@@ -28,10 +31,13 @@ pub const TEMPLATES = [_]Template{
     TMPL_BLOG_SERIES_TOC_ITEM_HTML,
     TMPL_MAIN_NAV_HTML,
     TMPL_MAIN_NAV_ITEM_HTML,
+    TMPL_TEXT_LINK,
+    TMPL_TEXT_LINK_ALT,
+    TMPL_BUTTON_LINK,
     TMPL_STYLES_CSS,
 };
 
-const DEFAULT_BASE_HTML =
+pub const DEFAULT_BASE_HTML =
     \\<!DOCTYPE html>
     \\<html lang="en">
     \\<head>
@@ -60,7 +66,6 @@ const DEFAULT_BASE_HTML =
     \\    <script>
     \\    document.addEventListener('DOMContentLoaded', (event) => {
     \\        document.getElementById('this-year').textContent = new Date().getFullYear();
-    \\ 
     \\        hljs.highlightAll();
     \\    });
     \\    </script>
@@ -122,6 +127,16 @@ pub const DEFAULT_MAIN_NAV_HTML =
 
 pub const DEFAULT_MAIN_NAV_ITEM_HTML =
     \\            <li><a href="{{link}}">{{title}}</a></li>
+;
+
+pub const DEFAULT_TEXT_LINK_HTML =
+    \\<a href="{{link}}" class="text-link">{{text}}</a>
+;
+pub const DEFAULT_TEXT_LINK_ALT_HTML =
+    \\<a href="{{link}}" class="text-link">{{text}}</a>
+;
+pub const DEFAULT_BUTTON_LINK_HTML =
+    \\<a href="{{link}}" class="button-link">{{text}}</a>
 ;
 
 pub const DEFAULT_STYLES =

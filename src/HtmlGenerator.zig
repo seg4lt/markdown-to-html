@@ -4,7 +4,7 @@ const DocInfo = struct {
     frontmatter: *const Frontmatter,
 };
 
-pub fn generateAll(gpa: Allocator, docs: *const ArrayList(Document), output_base: []const u8, tmpl_manager: *TemplateManager) !void {
+pub fn generateAll(gpa: Allocator, docs: *const ArrayList(Document), app_name: []const u8, app_subtitle: []const u8, output_base: []const u8, tmpl_manager: *TemplateManager) !void {
     var groups = std.StringHashMap(*ArrayList(DocInfo)).init(gpa);
     for (docs.items) |*doc| {
         std.log.debug("title({s}) file_path({s}), file_name({s})", .{ doc.frontmatter.value.title, doc.file_path, doc.file_name });
@@ -45,8 +45,8 @@ pub fn generateAll(gpa: Allocator, docs: *const ArrayList(Document), output_base
         const full_html = try TemplateManager.replacePlaceholders(
             gpa,
             try tmpl_manager.get(tmpl.TMPL_BASE_HTML.name),
-            &[_][]const u8{ "{{title}}", "{{content}}", "{{main_nav}}" },
-            &[_][]const u8{ doc.frontmatter.value.title, html, try tmpl_manager.getMainNav() },
+            &[_][]const u8{ "{{app_name}}", "{{app_subtitle}}", "{{title}}", "{{content}}", "{{main_nav}}" },
+            &[_][]const u8{ app_name, app_subtitle, doc.frontmatter.value.title, html, try tmpl_manager.getMainNav() },
         );
         defer gpa.free(full_html);
 
