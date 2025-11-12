@@ -33,7 +33,7 @@ pub fn get(self: *Self, tmpl_name: []const u8) ![]const u8 {
                 break :blk template.content;
             }
         }
-        std.log.err("{s} template not found",.{tmpl_name});
+        std.log.err("{s} template not found", .{tmpl_name});
         return error.TemplateNotFound;
     };
 
@@ -65,13 +65,14 @@ pub fn getMainNav(self: *Self) ![]const u8 {
 
     var dir = try std.fs.cwd().openDir(self.base_path, .{ .iterate = true });
     defer dir.close();
-    var top_level_dirs: ArrayList([]const u8) = .empty;
+    var top_level_dirs: ArrayList(struct { name: []const u8, link: []const u8 }) = .empty;
     defer top_level_dirs.deinit(self.gpa);
+    try top_level_dirs.append(self.gpa, .{ .name = "home", .link = "" });
 
     var it = dir.iterate();
     while (try it.next()) |dir_entry| {
         if (dir_entry.kind == .directory and !mem.eql(u8, dir_entry.name, self.tmpl_path) and !mem.startsWith(u8, dir_entry.name, "__")) {
-            try top_level_dirs.append(self.gpa, dir_entry.name);
+            try top_level_dirs.append(self.gpa, .{ .name = dir_entry.name, .link = dir_entry.name });
         }
     }
 
@@ -79,14 +80,14 @@ pub fn getMainNav(self: *Self) ![]const u8 {
     var nav_items_acc = std.io.Writer.Allocating.init(self.gpa);
     defer nav_items_acc.deinit();
     for (top_level_dirs.items, 0..) |dir_name, i| {
-        const link = try std.fmt.allocPrint(self.gpa, "/{s}/", .{dir_name});
+        const link = try std.fmt.allocPrint(self.gpa, "/{s}", .{dir_name.link});
         defer self.gpa.free(link);
 
         const nav_link = try replacePlaceholders(
             self.gpa,
             try self.get(tmpl.TMPL_BUTTON_LINK.name),
             &[_][]const u8{ "{{link}}", "{{text}}" },
-            &[_][]const u8{ link, dir_name },
+            &[_][]const u8{ link, dir_name.name },
         );
         defer self.gpa.free(nav_link);
 

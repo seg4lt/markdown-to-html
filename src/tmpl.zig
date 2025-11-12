@@ -10,7 +10,6 @@ pub const Template = struct { name: []const u8, content: []const u8 };
 pub const TMPL_BASE_HTML: Template = .{ .name = "base.html", .content = DEFAULT_BASE_HTML };
 pub const TMPL_HEADING_HTML: Template = .{ .name = "heading.html", .content = DEFAULT_HEADING_HTML };
 pub const TMPL_CODE_BLOCK_HTML: Template = .{ .name = "code_block.html", .content = DEFAULT_CODE_BLOCK };
-pub const TMPL_BLOG_LIST_HTML: Template = .{ .name = "blog_list.html", .content = DEFAULT_BLOG_LIST_HTML };
 pub const TMPL_BLOG_LIST_ITEM_HTML: Template = .{ .name = "blog_list_item.html", .content = DEFAULT_BLOG_LIST_ITEM_HTML };
 pub const TMPL_BLOG_SERIES_SECTION_WRAPPER_HTML: Template = .{ .name = "blog_series_section_wrapper.html", .content = DEFAULT_BLOG_SERIES_SECTION_WRAPPER_HTML };
 pub const TMPL_BLOG_SERIES_TOC_ITEM_HTML: Template = .{ .name = "blog_series_toc_item.html", .content = DEFAULT_BLOG_SERIES_TOC_ITEM_HTML };
@@ -19,13 +18,13 @@ pub const TMPL_MAIN_NAV_ITEM_HTML: Template = .{ .name = "main_nav_item.html", .
 pub const TMPL_TEXT_LINK: Template = .{ .name = "text_link.html", .content = DEFAULT_TEXT_LINK_HTML };
 pub const TMPL_TEXT_LINK_ALT: Template = .{ .name = "text_link_alt.html", .content = DEFAULT_TEXT_LINK_ALT_HTML };
 pub const TMPL_BUTTON_LINK: Template = .{ .name = "button_link.html", .content = DEFAULT_BUTTON_LINK_HTML };
+pub const TMPL_CARD: Template = .{ .name = "card.html", .content = DEFAULT_CARD_HTML };
 pub const TMPL_STYLES_CSS: Template = .{ .name = "styles.css", .content = DEFAULT_STYLES };
 
 pub const TEMPLATES = [_]Template{
     TMPL_BASE_HTML,
     TMPL_HEADING_HTML,
     TMPL_CODE_BLOCK_HTML,
-    TMPL_BLOG_LIST_HTML,
     TMPL_BLOG_LIST_ITEM_HTML,
     TMPL_BLOG_SERIES_SECTION_WRAPPER_HTML,
     TMPL_BLOG_SERIES_TOC_ITEM_HTML,
@@ -34,6 +33,7 @@ pub const TEMPLATES = [_]Template{
     TMPL_TEXT_LINK,
     TMPL_TEXT_LINK_ALT,
     TMPL_BUTTON_LINK,
+    TMPL_CARD,
     TMPL_STYLES_CSS,
 };
 
@@ -80,14 +80,6 @@ const DEFAULT_CODE_BLOCK =
     \\    <pre><code{{class}}>{{content}}</code></pre>
 ;
 
-const DEFAULT_BLOG_LIST_HTML =
-    \\<section class="blog-list">
-    \\    <h2>Recent Blogs</h2>
-    \\    <ul class="blog-list-item">
-    \\        {{content}}
-    \\    </ul>
-    \\</section>
-;
 const DEFAULT_BLOG_LIST_ITEM_HTML =
     \\ <li class="blog-list-item">
     \\     <a href="{{link}}" class="blog-list-item-link">
@@ -137,6 +129,33 @@ pub const DEFAULT_TEXT_LINK_ALT_HTML =
 ;
 pub const DEFAULT_BUTTON_LINK_HTML =
     \\<a href="{{link}}" class="button-link">{{text}}</a>
+;
+
+pub const CardType = enum { primary, accent, secondary };
+pub const CardWidthType = enum {
+    default,
+    wide,
+    full_width,
+
+    pub fn format(self: @This(), writer: anytype) !void {
+        const value = switch (self.type) {
+            .default => "",
+            .wide => "wide-card",
+            .full_width => "full-width-card",
+        };
+        writer.print("{s}", .{value}) catch unreachable;
+    }
+};
+pub const DEFAULT_CARD_HTML =
+    \\<section class="card">
+    \\    <!-- variant == primary, accent, secondary -->
+    \\    <div class="card-header {{variant}}-header">
+    \\        <h2 class="card-title">{{title}}</h2>
+    \\    </div>
+    \\    <div class="card-content">
+    \\        {{content}}
+    \\    </div>
+    \\</section>
 ;
 
 pub const DEFAULT_STYLES =

@@ -183,9 +183,9 @@ const HtmlGenerator = struct {
         }
         const blog_list_html = try TemplateManager.replacePlaceholders(
             self.gpa,
-            try self.template_manager.get(tmpl.TMPL_BLOG_LIST_HTML.name),
-            &[_][]const u8{"{{content}}"},
-            &[_][]const u8{try list_accum.toOwnedSlice()},
+            try self.template_manager.get(tmpl.TMPL_CARD.name),
+            &[_][]const u8{ "{{title}}", "{{variant}}", "{{content}}" },
+            &[_][]const u8{ "Recent Blogs", "primary", try list_accum.toOwnedSlice() },
         );
         return blog_list_html;
     }
@@ -198,13 +198,13 @@ const HtmlGenerator = struct {
         defer self.gpa.free(class_attr);
 
         const tmpl_str = try self.template_manager.get(tmpl.TMPL_CODE_BLOCK_HTML.name);
-        const final_html = try TemplateManager.replacePlaceholders(
+        const code_html = try TemplateManager.replacePlaceholders(
             self.gpa,
             tmpl_str,
             &[_][]const u8{ "{{class}}", "{{content}}" },
             &[_][]const u8{ class_attr, code_block.content },
         );
-        return final_html;
+        return code_html;
     }
 
     fn generateParagraph(self: *@This(), p_content: []const u8) ![]u8 {
