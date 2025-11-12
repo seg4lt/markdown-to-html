@@ -74,10 +74,85 @@ pub const DEFAULT_BLOG_SERIES_SECTION_WRAPPER_HTML =
     \\     </ol>
     \\ </section>
 ;
+
 pub const DEFAULT_BLOG_SERIES_TOC_ITEM_HTML =
     \\         <li class="blog-series-item">
     \\             <a href="{{link}}" class="blog-series-toc-link">
     \\                 {{title}}
     \\             </a>
     \\         </li>
+;
+
+pub const DEFAULT_MAIN_NAV_HTML =
+    \\<nav class="main-nav">
+    \\    <div class="nav-container">
+    \\        <a href="/" class="nav-logo">{{app_name}}</a>
+    \\        <ul class="nav-links">
+    \\{{nav_items}}
+    \\        </ul>
+    \\    </div>
+    \\</nav>
+;
+
+pub const DEFAULT_MAIN_NAV_ITEM_HTML =
+    \\            <li><a href="{{link}}">{{title}}</a></li>
+;
+
+pub const DEFAULT_STYLES =
+    \\ /* Base theme variables */
+    \\ :root {
+    \\     --bg-primary: #ffffff;
+    \\     --bg-secondary: #f6f8fa;
+    \\     --bg-tertiary: #f0f2f5;
+    \\     --text-primary: #24292f;
+    \\     --text-secondary: #57606a;
+    \\     --text-tertiary: #6e7781;
+    \\     --border-color: #d0d7de;
+    \\     --link-color: #0969da;
+    \\     --link-hover: #0550ae;
+    \\     --code-bg: #f6f8fa;
+    \\     --code-border: #d0d7de;
+    \\     --heading-color: #24292f;
+    \\     --nav-bg: #24292f;
+    \\     --nav-text: #ffffff;
+    \\     --nav-hover: #0969da;
+    \\ }
+    \\ 
+    \\ /* Dark theme */
+    \\ [data-theme="dark"] {
+    \\     --bg-primary: #0d1117;
+    \\     --bg-secondary: #161b22;
+    \\     --bg-tertiary: #21262d;
+    \\     --text-primary: #c9d1d9;
+    \\     --text-secondary: #8b949e;
+    \\     --text-tertiary: #6e7681;
+    \\     --border-color: #30363d;
+    \\     --link-color: #58a6ff;
+    \\     --link-hover: #79c0ff;
+    \\     --code-bg: #161b22;
+    \\     --code-border: #30363d;
+    \\     --heading-color: #c9d1d9;
+    \\     --nav-bg: #161b22;
+    \\     --nav-text: #c9d1d9;
+    \\     --nav-hover: #58a6ff;
+    \\ }
+    \\ 
+    \\ /* Base styles */
+    \\ * {
+    \\     margin: 0;
+    \\     padding: 0;
+    \\     box-sizing: border-box;
+    \\ }
+    \\ 
+    \\ body {
+    \\     font-family: "Cascadia Code", sans-serif;
+    \\     font-optical-sizing: auto;
+    \\     font-size: 16px;
+    \\     line-height: 1.6;
+    \\     color: var(--text-primary);
+    \\     background-color: var(--bg-primary);
+    \\     max-width: 1200px;
+    \\     margin: 0 auto;
+    \\     padding: 20px;
+    \\ }
 ;

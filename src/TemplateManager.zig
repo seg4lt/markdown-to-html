@@ -41,26 +41,37 @@ pub fn getMainNav(self: *Self) ![]const u8 {
             try top_level_dirs.append(self.gpa, dir_entry.name);
         }
     }
-    var accumulator = std.io.Writer.Allocating.init(self.gpa);
-    var writer = &accumulator.writer;
-    try writer.print(
-        \\<nav class="main-nav">
-        \\    <div class="nav-container">
-        \\        <a href="/" class="nav-logo">{s}</a>
-        \\        <ul class="nav-links">
-    , .{self.app_name});
-    for (top_level_dirs.items) |dir_name| {
-        try writer.print(
-            \\<li><a href="/{s}/">{s}</a></li>
-        , .{ dir_name, dir_name });
-    }
-    try writer.print(
-        \\        </ul>
-        \\    </div>
-        \\</nav>
-    , .{});
 
-    const nav_menu = try accumulator.toOwnedSlice();
+    // Build nav items
+    var nav_items_acc = std.io.Writer.Allocating.init(self.gpa);
+    defer nav_items_acc.deinit();
+    for (top_level_dirs.items, 0..) |dir_name, i| {
+        const link = try std.fmt.allocPrint(self.gpa, "/{s}/", .{dir_name});
+        defer self.gpa.free(link);
+
+        const nav_item = try replacePlaceholders(
+            self.gpa,
+            tmpl.DEFAULT_MAIN_NAV_ITEM_HTML,
+            &[_][]const u8{ "{{link}}", "{{title}}" },
+            &[_][]const u8{ link, dir_name },
+        );
+        defer self.gpa.free(nav_item);
+
+        try nav_items_acc.writer.writeAll(nav_item);
+        if (i < top_level_dirs.items.len - 1) {
+            try nav_items_acc.writer.writeAll("\n");
+        }
+    }
+
+    const nav_items = try nav_items_acc.toOwnedSlice();
+    defer self.gpa.free(nav_items);
+
+    const nav_menu = try replacePlaceholders(
+        self.gpa,
+        tmpl.DEFAULT_MAIN_NAV_HTML,
+        &[_][]const u8{ "{{app_name}}", "{{nav_items}}" },
+        &[_][]const u8{ self.app_name, nav_items },
+    );
     try self.map.put(NAV_MENU_KEY, nav_menu);
     return nav_menu;
 }
@@ -69,7 +80,7 @@ pub fn copyDefaultFiles(self: *Self, output_path: []const u8) !void {
     for (COPY_FILES) |file_name| {
         const src_path = try std.fs.path.join(self.gpa, &[_][]const u8{ self.base_path, self.tmpl_path, file_name });
         defer self.gpa.free(src_path);
-        
+
         std.fs.cwd().makePath(output_path) catch |err| if (err != error.PathAlreadyExists) return err;
 
         const dest_path = try std.fs.path.join(self.gpa, &[_][]const u8{ output_path, file_name });
@@ -103,7 +114,23 @@ pub fn getTemplate(self: *Self, name: []const u8) ?[]const u8 {
     return content;
 }
 
+// TODO(seg4lt)
+// Maybe implement proper parser, so we don't use replaceOwned
+// replaceOwned is called multiple times, so it's not efficient
+// If we create our own parser, I think we can do this in one pass
+// Also we don't need to make copy and destroy
+pub fn replacePlaceholders(gpa: Allocator, haystack: []const u8, keys: []const []const u8, values: []const []const u8) ![]u8 {
+    var result = try gpa.dupe(u8, haystack);
+    for (keys, values) |key, value| {
+        const old = result;
+        defer gpa.free(old);
+        result = try std.mem.replaceOwned(u8, gpa, result, key, value);
+    }
+    return result;
+}
+
 const std = @import("std");
+const tmpl = @import("tmpl.zig");
 const common = @import("common.zig");
 
 const MAX_FILE_SIZE = common.MAX_FILE_SIZE;

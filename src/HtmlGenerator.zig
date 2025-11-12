@@ -42,7 +42,8 @@ pub fn generateAll(gpa: Allocator, docs: *const ArrayList(Document), output_base
         const html = try generator.generate();
 
         // Apply base template with main_nav
-        const full_html = try generator.replacePlaceholdersOwned(
+        const full_html = try TemplateManager.replacePlaceholders(
+            gpa,
             tmpl.DEFAULT_BASE_HTML,
             &[_][]const u8{ "{{title}}", "{{content}}", "{{main_nav}}" },
             &[_][]const u8{ doc.frontmatter.value.title, html, try tmpl_manager.getMainNav() },
@@ -144,7 +145,8 @@ const HtmlGenerator = struct {
         for (blog_list.items) |info| {
             const link = try std.fmt.allocPrint(self.gpa, "/{s}/{s}.html", .{ info.file_path, info.file_name[0 .. info.file_name.len - 3] }); // remove .md
             defer self.gpa.free(link);
-            const item_html = try self.replacePlaceholdersOwned(
+            const item_html = try TemplateManager.replacePlaceholders(
+                self.gpa,
                 tmpl.DEFAULT_BLOG_SERIES_TOC_ITEM_HTML,
                 &[_][]const u8{ "{{link}}", "{{title}}" },
                 &[_][]const u8{ link, info.frontmatter.title },
@@ -152,7 +154,8 @@ const HtmlGenerator = struct {
             defer self.gpa.free(item_html);
             try list_accum.writer.print("{s}\n", .{item_html});
         }
-        const blog_list_html = try self.replacePlaceholdersOwned(
+        const blog_list_html = try TemplateManager.replacePlaceholders(
+            self.gpa,
             tmpl.DEFAULT_BLOG_SERIES_SECTION_WRAPPER_HTML,
             &[_][]const u8{"{{content}}"},
             &[_][]const u8{try list_accum.toOwnedSlice()},
@@ -169,7 +172,8 @@ const HtmlGenerator = struct {
         for (blog_list.items) |info| {
             const link = try std.fmt.allocPrint(self.gpa, "/{s}/{s}.html", .{ info.file_path, info.file_name[0 .. info.file_name.len - 3] }); // remove .md
             defer self.gpa.free(link);
-            const item_html = try self.replacePlaceholdersOwned(
+            const item_html = try TemplateManager.replacePlaceholders(
+                self.gpa,
                 tmpl.DEFAULT_BLOG_LIST_ITEM_HTML,
                 &[_][]const u8{ "{{link}}", "{{title}}", "{{desc}}", "{{date}}" },
                 &[_][]const u8{ link, info.frontmatter.title, info.frontmatter.description, info.frontmatter.date },
@@ -177,7 +181,8 @@ const HtmlGenerator = struct {
             defer self.gpa.free(item_html);
             try list_accum.writer.print("{s}\n", .{item_html});
         }
-        const blog_list_html = try self.replacePlaceholdersOwned(
+        const blog_list_html = try TemplateManager.replacePlaceholders(
+            self.gpa,
             tmpl.DEFAULT_BLOG_LIST_HTML,
             &[_][]const u8{"{{content}}"},
             &[_][]const u8{try list_accum.toOwnedSlice()},
@@ -193,7 +198,8 @@ const HtmlGenerator = struct {
         defer self.gpa.free(class_attr);
 
         const tmpl_str = tmpl.DEFAULT_CODE_BLOCK;
-        const final_html = try self.replacePlaceholdersOwned(
+        const final_html = try TemplateManager.replacePlaceholders(
+            self.gpa,
             tmpl_str,
             &[_][]const u8{ "{{class}}", "{{content}}" },
             &[_][]const u8{ class_attr, code_block.content },
@@ -213,7 +219,8 @@ const HtmlGenerator = struct {
             else => std.debug.panic("** bug ** not reachable - only heading should reach here", .{}),
         };
         const tmpl_str = tmpl.DEFAULT_HEADING_HTML;
-        const final_html = try self.replacePlaceholdersOwned(
+        const final_html = try TemplateManager.replacePlaceholders(
+            self.gpa,
             tmpl_str,
             &[_][]const u8{ "{{level}}", "{{content}}" },
             &[_][]const u8{ switch (node) {
@@ -224,21 +231,6 @@ const HtmlGenerator = struct {
             }, text },
         );
         return final_html;
-    }
-
-    // TODO(seg4lt)
-    // Maybe implement proper parser, so we don't use replaceOwned
-    // replaceOwned is called multiple times, so it's not efficient
-    // If we create our own parser, I think we can do this in one pass
-    // Also we don't need to make copy and destroy
-    fn replacePlaceholdersOwned(self: *@This(), haystack: []const u8, keys: []const []const u8, values: []const []const u8) Error![]u8 {
-        var result = try self.gpa.dupe(u8, haystack);
-        for (keys, values) |key, value| {
-            const old = result;
-            defer self.gpa.free(old);
-            result = try mem.replaceOwned(u8, self.gpa, result, key, value);
-        }
-        return result;
     }
 };
 
