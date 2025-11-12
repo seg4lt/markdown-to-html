@@ -11,6 +11,11 @@ pub fn main() !void {
     // };
     const args = claptain.parse(Clap, .{}) catch std.process.exit(1);
 
+    if (args.output_default_tpl) {
+        try outputDefaultTemplates(gpa);
+        std.process.exit(0);
+    }
+
     var tmpl_manager = TemplateManager.init(gpa, args.base_path, args.tmpl_path, args.app_name);
     defer tmpl_manager.map.deinit();
     try tmpl_manager.copyDefaultFiles(args.output_path);
@@ -29,7 +34,45 @@ const Clap = struct {
     base_path: []const u8 = "example",
     output_path: []const u8 = "dist",
     tmpl_path: []const u8 = "__templates",
+    output_default_tpl: bool = false,
 };
+
+fn outputDefaultTemplates(gpa: Allocator) !void {
+    const args = claptain.parse(Clap, .{}) catch std.process.exit(1);
+    const output_dir = try std.fs.path.join(gpa, &[_][]const u8{ args.base_path, "__default_templates__" });
+    defer gpa.free(output_dir);
+
+    // Create the output directory
+    std.fs.cwd().makePath(output_dir) catch |err| {
+        if (err != error.PathAlreadyExists) return err;
+    };
+
+    const templates = [_]struct { name: []const u8, content: []const u8 }{
+        .{ .name = "base.html", .content = tmpl.DEFAULT_BASE_HTML },
+        .{ .name = "heading.html", .content = tmpl.DEFAULT_HEADING_HTML },
+        .{ .name = "code_block.html", .content = tmpl.DEFAULT_CODE_BLOCK },
+        .{ .name = "blog_list.html", .content = tmpl.DEFAULT_BLOG_LIST_HTML },
+        .{ .name = "blog_list_item.html", .content = tmpl.DEFAULT_BLOG_LIST_ITEM_HTML },
+        .{ .name = "blog_series_section_wrapper.html", .content = tmpl.DEFAULT_BLOG_SERIES_SECTION_WRAPPER_HTML },
+        .{ .name = "blog_series_toc_item.html", .content = tmpl.DEFAULT_BLOG_SERIES_TOC_ITEM_HTML },
+        .{ .name = "main_nav.html", .content = tmpl.DEFAULT_MAIN_NAV_HTML },
+        .{ .name = "main_nav_item.html", .content = tmpl.DEFAULT_MAIN_NAV_ITEM_HTML },
+        .{ .name = "styles.css", .content = tmpl.DEFAULT_STYLES },
+    };
+
+    for (templates) |template| {
+        const path = try std.fs.path.join(gpa, &[_][]const u8{ output_dir, template.name });
+        defer gpa.free(path);
+
+        const file = try std.fs.cwd().createFile(path, .{});
+        defer file.close();
+
+        try file.writeAll(template.content);
+        std.log.info("Created: {s}", .{path});
+    }
+
+    std.log.info("All default templates written to {s}/", .{output_dir});
+}
 
 fn getAllocator() struct { Allocator, bool } {
     return switch (builtin.mode) {
@@ -41,6 +84,7 @@ fn getAllocator() struct { Allocator, bool } {
 const std = @import("std");
 const claptain = @import("claptain");
 const builtin = @import("builtin");
+const tmpl = @import("tmpl.zig");
 const TemplateManager = @import("TemplateManager.zig");
 const Parser = @import("Parser.zig");
 const HtmlGenerator = @import("HtmlGenerator.zig");
