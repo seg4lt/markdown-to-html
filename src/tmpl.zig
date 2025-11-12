@@ -37,39 +37,61 @@ pub const TEMPLATES = [_]Template{
     TMPL_STYLES_CSS,
 };
 
-pub const DEFAULT_BASE_HTML =
-    \\<!DOCTYPE html>
+const DEFAULT_BASE_HTML =
+    \\<!doctype html>
     \\<html lang="en">
-    \\<head>
-    \\    <meta charset="UTF-8">
-    \\    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    \\    <title>{{title}}</title>
-    \\    <link rel="stylesheet" href="/styles.css">
-    \\    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/styles/github-dark.min.css">
-    \\ <link rel="preconnect" href="https://fonts.googleapis.com">
-    \\ <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    \\ <link href="https://fonts.googleapis.com/css2?family=Cascadia+Code:ital,wght@0,200..700;1,200..700&display=swap" rel="stylesheet">
-    \\</head>
-    \\<body>
-    \\    {{main_nav}}
-    \\    
-    \\    <main class="container">
-    \\     {{content}}
-    \\    </main>
-    \\    
-    \\    <footer class="main-footer">
-    \\        <div class="container">
-    \\            <p>&copy; <span id="this-year"></span> seg4lt. Markdown to html generator written in Zig</p>
+    \\    <head>
+    \\        <meta charset="UTF-8" />
+    \\        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    \\        <title>{{title}} - Updated</title>
+    \\        <link rel="stylesheet" href="/styles.css" />
+    \\        <link
+    \\            rel="stylesheet"
+    \\            href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/styles/github-dark.min.css"
+    \\        />
+    \\        <link rel="preconnect" href="https://fonts.googleapis.com" />
+    \\        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    \\        <link
+    \\            href="https://fonts.googleapis.com/css2?family=Cascadia+Code:ital,wght@0,200..700;1,200..700&display=swap"
+    \\            rel="stylesheet"
+    \\        />
+    \\        <link
+    \\            href="https://fonts.googleapis.com/css2?family=Geist+Mono:wght@400;700;900&display=swap"
+    \\            rel="stylesheet"
+    \\        />
+    \\        <script
+    \\            defer
+    \\            src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/highlight.min.js"
+    \\        ></script>
+    \\    </head>
+    \\    <body>
+    \\        <div class="global-container">
+    \\            <header class="main-header">
+    \\                <h1 class="main-title">{{app_name}}</h1>
+    \\                <p class="main-subtitle">{{app_subtitle}}</p>
+    \\                {{main_nav}}
+    \\            </header>
+    \\
+    \\            <div class="main-content">{{content}}</div>
+    \\
+    \\            <footer class="main-footer">
+    \\                <div class="container">
+    \\                    <p>
+    \\                        &copy; <span id="this-year"></span> seg4lt. Markdown to
+    \\                        html generator written in Zig
+    \\                    </p>
+    \\                </div>
+    \\            </footer>
+    \\
+    \\            <script>
+    \\                document.addEventListener("DOMContentLoaded", (event) => {
+    \\                    document.getElementById("this-year").textContent =
+    \\                        new Date().getFullYear();
+    \\                    hljs.highlightAll();
+    \\                });
+    \\            </script>
     \\        </div>
-    \\    </footer>
-    \\    <script defer src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/highlight.min.js"></script>
-    \\    <script>
-    \\    document.addEventListener('DOMContentLoaded', (event) => {
-    \\        document.getElementById('this-year').textContent = new Date().getFullYear();
-    \\        hljs.highlightAll();
-    \\    });
-    \\    </script>
-    \\</body>
+    \\    </body>
     \\</html>
 ;
 const DEFAULT_HEADING_HTML =
@@ -77,21 +99,20 @@ const DEFAULT_HEADING_HTML =
 ;
 
 const DEFAULT_CODE_BLOCK =
-    \\    <pre><code{{class}}>{{content}}</code></pre>
+    \\    <pre class="code-block"><code{{class}}>{{content}}</code></pre>
 ;
 
 const DEFAULT_BLOG_LIST_ITEM_HTML =
-    \\ <li class="blog-list-item">
-    \\     <a href="{{link}}" class="blog-list-item-link">
-    \\         <div class="blog-list-item-title">{{title}}</div>
-    \\         <div class="blog-list-item-desc">{{desc}}</div>
-    \\         <div class="blog-list-item-date">{{date}}</div>
-    \\    </a>
-    \\ </li>
+    \\<a href="{{link}}" class="blog-list-item-link button-link">
+    \\    <div class="blog-list-item-title">{{title}}</div>
+    \\    <div class="blog-list-item-desc">{{desc}}</div>
+    \\    <div class="blog-list-item-date">{{date}}</div>
+    \\</a>
 ;
 
 const DEFAULT_BLOG_SERIES_SECTION_WRAPPER_HTML =
     \\ <section class="blog-series table-of-content">
+    \\     <h3>Table of Contents</h3>
     \\     <ol>
     \\            {{content}}
     \\     </ol>
@@ -108,17 +129,14 @@ const DEFAULT_BLOG_SERIES_TOC_ITEM_HTML =
 
 pub const DEFAULT_MAIN_NAV_HTML =
     \\<nav class="main-nav">
-    \\    <div class="nav-container">
-    \\        <a href="/" class="nav-logo">{{app_name}}</a>
-    \\        <ul class="nav-links">
-    \\{{nav_items}}
-    \\        </ul>
-    \\    </div>
+    \\    <ul class="nav-links">
+    \\        {{nav_items}}
+    \\    </ul>
     \\</nav>
 ;
 
 pub const DEFAULT_MAIN_NAV_ITEM_HTML =
-    \\            <li><a href="{{link}}">{{title}}</a></li>
+    \\<li>{{item}}</li>
 ;
 
 pub const DEFAULT_TEXT_LINK_HTML =
@@ -159,60 +177,295 @@ pub const DEFAULT_CARD_HTML =
 ;
 
 pub const DEFAULT_STYLES =
-    \\ /* Base theme variables */
-    \\ :root {
-    \\     --bg-primary: #ffffff;
-    \\     --bg-secondary: #f6f8fa;
-    \\     --bg-tertiary: #f0f2f5;
-    \\     --text-primary: #24292f;
-    \\     --text-secondary: #57606a;
-    \\     --text-tertiary: #6e7781;
-    \\     --border-color: #d0d7de;
-    \\     --link-color: #0969da;
-    \\     --link-hover: #0550ae;
-    \\     --code-bg: #f6f8fa;
-    \\     --code-border: #d0d7de;
-    \\     --heading-color: #24292f;
-    \\     --nav-bg: #24292f;
-    \\     --nav-text: #ffffff;
-    \\     --nav-hover: #0969da;
-    \\ }
-    \\ 
-    \\ /* Dark theme */
-    \\ [data-theme="dark"] {
-    \\     --bg-primary: #0d1117;
-    \\     --bg-secondary: #161b22;
-    \\     --bg-tertiary: #21262d;
-    \\     --text-primary: #c9d1d9;
-    \\     --text-secondary: #8b949e;
-    \\     --text-tertiary: #6e7681;
-    \\     --border-color: #30363d;
-    \\     --link-color: #58a6ff;
-    \\     --link-hover: #79c0ff;
-    \\     --code-bg: #161b22;
-    \\     --code-border: #30363d;
-    \\     --heading-color: #c9d1d9;
-    \\     --nav-bg: #161b22;
-    \\     --nav-text: #c9d1d9;
-    \\     --nav-hover: #58a6ff;
-    \\ }
-    \\ 
-    \\ /* Base styles */
-    \\ * {
-    \\     margin: 0;
-    \\     padding: 0;
-    \\     box-sizing: border-box;
-    \\ }
-    \\ 
-    \\ body {
-    \\     font-family: "Cascadia Code", sans-serif;
-    \\     font-optical-sizing: auto;
-    \\     font-size: 16px;
-    \\     line-height: 1.6;
-    \\     color: var(--text-primary);
-    \\     background-color: var(--bg-primary);
-    \\     max-width: 1200px;
-    \\     margin: 0 auto;
-    \\     padding: 20px;
-    \\ }
+    \\:root {
+    \\    --bg-background: oklch(0.12 0 0);
+    \\    --bg-background-slightly-light: oklch(0.18 0 0);
+    \\    --code-background-color: oklch(0.25 0 0);
+    \\    --text-foreground: oklch(0.98 0 0);
+    \\    --text-subtitle: oklch(0.65 0 0);
+    \\
+    \\    --primary-color: oklch(0.75 0.19 142);
+    \\    --secondary-color: oklch(0.78 0.2 50);
+    \\    --primary-color-accent: oklch(0.82 0.15 85);
+    \\    --ternary-color: oklch(0.63 0.12 255.91);
+    \\    --nav-primary-color: oklch(0.62 0.18 315.9);
+    \\}
+    \\
+    \\* {
+    \\    margin: 0;
+    \\    padding: 0;
+    \\    box-sizing: border-box;
+    \\}
+    \\
+    \\body {
+    \\    background-color: var(--bg-background);
+    \\    color: var(--text-foreground);
+    \\    font-family: "Geist Mono", monospace;
+    \\    min-height: 100vh;
+    \\    padding: 24px;
+    \\}
+    \\
+    \\code {
+    \\    font-family: "Cascadia Code";
+    \\}
+    \\
+    \\.global-container {
+    \\    max-width: 1200px;
+    \\    margin: 0 auto;
+    \\    display: flex;
+    \\    flex-direction: column;
+    \\    gap: 1.5em;
+    \\}
+    \\
+    \\/* ============================================
+    \\   MAIN HEADER
+    \\   ============================================ */
+    \\.main-header {
+    \\    margin-bottom: 48px;
+    \\    border: 4px solid var(--text-foreground);
+    \\    background-color: var(--bg-background-slightly-light);
+    \\    padding: 16px;
+    \\    box-shadow: 8px 8px 0px 0px rgba(250, 250, 250, 1);
+    \\    position: sticky;
+    \\    top: 0;
+    \\}
+    \\
+    \\.main-title {
+    \\    margin-bottom: 16px;
+    \\    font-size: 2rem;
+    \\    font-weight: 900;
+    \\    text-transform: uppercase;
+    \\    letter-spacing: -0.025em;
+    \\    line-height: 1;
+    \\    color: var(--text-foreground);
+    \\}
+    \\
+    \\.main-subtitle {
+    \\    font-size: 1rem;
+    \\    font-weight: 500;
+    \\    color: var(--text-subtitle);
+    \\    line-height: 1.5;
+    \\}
+    \\
+    \\/* ============================================
+    \\   MAIN CONTENT
+    \\   ============================================ */
+    \\.main-content {
+    \\    display: flex;
+    \\    flex-direction: column;
+    \\    gap: 1.5em;
+    \\}
+    \\
+    \\/* ============================================
+    \\   MAIN NAV
+    \\   ============================================ */
+    \\.nav-links {
+    \\    font-size: 1rem;
+    \\    list-style: none;
+    \\    display: flex;
+    \\    flex-direction: row;
+    \\    flex-grow: 0;
+    \\    gap: 1em;
+    \\    flex-wrap: wrap;
+    \\}
+    \\.nav-links > li > a {
+    \\    background-color: var(--nav-primary-color);
+    \\}
+    \\
+    \\/* ============================================
+    \\   GRID LAYOUT
+    \\   ============================================ */
+    \\.grid {
+    \\    display: grid;
+    \\    gap: 24px;
+    \\    grid-template-columns: 1fr;
+    \\}
+    \\
+    \\@media (min-width: 768px) {
+    \\    .grid {
+    \\        grid-template-columns: repeat(2, 1fr);
+    \\    }
+    \\}
+    \\
+    \\@media (min-width: 1024px) {
+    \\    .grid {
+    \\        grid-template-columns: repeat(3, 1fr);
+    \\    }
+    \\}
+    \\
+    \\/* ============================================
+    \\   HEADINGS
+    \\   ============================================ */
+    \\h1 {
+    \\    font-size: 2.25rem;
+    \\    font-weight: 900;
+    \\    color: var(--text-foreground);
+    \\}
+    \\
+    \\h2 {
+    \\    font-size: 1.875rem;
+    \\    font-weight: 900;
+    \\    color: var(--text-foreground);
+    \\}
+    \\
+    \\h3 {
+    \\    font-size: 1.5rem;
+    \\    font-weight: 700;
+    \\    color: var(--text-foreground);
+    \\}
+    \\
+    \\h4 {
+    \\    font-size: 1.25rem;
+    \\    font-weight: 700;
+    \\    color: var(--text-foreground);
+    \\}
+    \\
+    \\h5 {
+    \\    font-size: 1.125rem;
+    \\    font-weight: 700;
+    \\    color: var(--text-foreground);
+    \\}
+    \\
+    \\h6 {
+    \\    font-size: 1rem;
+    \\    font-weight: 700;
+    \\    color: var(--text-foreground);
+    \\}
+    \\
+    \\/* ============================================
+    \\   LINKS
+    \\   ============================================ */
+    \\.text-link {
+    \\    border-bottom: 4px solid var(--primary-color);
+    \\    font-weight: 700;
+    \\    color: var(--primary-color);
+    \\    text-decoration: none;
+    \\    transition: all 0.2s;
+    \\}
+    \\
+    \\.text-link:hover {
+    \\    border-color: var(--primary-color-accent);
+    \\    color: var(--primary-color-accent);
+    \\}
+    \\
+    \\.text-link.alt {
+    \\    border-color: var(--secondary-color);
+    \\    color: var(--secondary-color);
+    \\}
+    \\
+    \\.text-link.alt:hover {
+    \\    border-color: var(--primary-color);
+    \\    color: var(--primary-color);
+    \\}
+    \\
+    \\.button-link {
+    \\    display: inline-block;
+    \\    border: 4px solid oklch(0.98 0 0);
+    \\    background-color: var(--primary-color);
+    \\    padding: 8px 16px;
+    \\    font-weight: 900;
+    \\    text-transform: uppercase;
+    \\    color: oklch(0.12 0 0);
+    \\    box-shadow: 4px 4px 0px 0px rgba(250, 250, 250, 1);
+    \\    transition: all 0.2s;
+    \\    text-decoration: none;
+    \\}
+    \\
+    \\.button-link:hover {
+    \\    transform: translate(1px, 1px);
+    \\    box-shadow: none;
+    \\}
+    \\
+    \\/* ============================================
+    \\   CARD COMPONENTS
+    \\   ============================================ */
+    \\.card {
+    \\    border: 4px solid var(--text-foreground);
+    \\    background-color: var(--bg-background-slightly-light);
+    \\    padding: 24px;
+    \\    box-shadow: 6px 6px 0px 0px rgba(250, 250, 250, 1);
+    \\}
+    \\
+    \\.wide-card {
+    \\    grid-column: span 1;
+    \\}
+    \\
+    \\.full-width-card {
+    \\    grid-column: span 1;
+    \\}
+    \\
+    \\@media (min-width: 768px) {
+    \\    .wide-card {
+    \\        grid-column: span 2;
+    \\    }
+    \\}
+    \\
+    \\@media (min-width: 1024px) {
+    \\    .full-width-card {
+    \\        grid-column: span 3;
+    \\    }
+    \\}
+    \\
+    \\.card-header {
+    \\    margin-bottom: 16px;
+    \\    border-bottom: 4px solid;
+    \\    padding-bottom: 8px;
+    \\}
+    \\
+    \\.primary-header {
+    \\    border-color: var(--primary-color);
+    \\}
+    \\
+    \\.secondary-header {
+    \\    border-color: var(--secondary-color);
+    \\}
+    \\.accent-header {
+    \\    border-color: var(--primary-color-accent);
+    \\}
+    \\
+    \\.card-title {
+    \\    font-size: 1.5rem;
+    \\    font-weight: 900;
+    \\    text-transform: uppercase;
+    \\}
+    \\
+    \\.primary-header .card-title {
+    \\    color: --var(--primary-color);
+    \\}
+    \\
+    \\.secondary-header .card-title {
+    \\    color: --var(--secondary-color);
+    \\}
+    \\
+    \\.accent-header .card-title {
+    \\    color: --var(--primary-color-accent);
+    \\}
+    \\
+    \\.card-content {
+    \\    display: flex;
+    \\    flex-direction: column;
+    \\    gap: 12px;
+    \\}
+    \\
+    \\.blog-list-item-link {
+    \\    background-color: var(--ternary-color);
+    \\}
+    \\
+    \\/* ============================================
+    \\   CODE BLOCk
+    \\   ============================================ */
+    \\.code-block {
+    \\    overflow-x: auto;
+    \\    border: 4px solid var(--text-foreground);
+    \\    background-color: var(--code-background-color);
+    \\    padding: 16px;
+    \\    box-shadow: 4px 4px 0px 0px rgba(250, 250, 250, 1);
+    \\}
+    \\.code-block code {
+    \\    border: none;
+    \\    background: none;
+    \\    padding: 0;
+    \\    font-size: 0.875rem;
+    \\    color: var(--text-foreground);
+    \\}
 ;
