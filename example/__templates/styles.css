@@ -1,56 +1,323 @@
- /* Base theme variables */
- :root {
-     --bg-primary: #ffffff;
-     --bg-secondary: #f6f8fa;
-     --bg-tertiary: #f0f2f5;
-     --text-primary: #24292f;
-     --text-secondary: #57606a;
-     --text-tertiary: #6e7781;
-     --border-color: #d0d7de;
-     --link-color: #0969da;
-     --link-hover: #0550ae;
-     --code-bg: #f6f8fa;
-     --code-border: #d0d7de;
-     --heading-color: #24292f;
-     --nav-bg: #24292f;
-     --nav-text: #ffffff;
-     --nav-hover: #0969da;
- }
- 
- /* Dark theme */
- [data-theme="dark"] {
-     --bg-primary: #0d1117;
-     --bg-secondary: #161b22;
-     --bg-tertiary: #21262d;
-     --text-primary: #c9d1d9;
-     --text-secondary: #8b949e;
-     --text-tertiary: #6e7681;
-     --border-color: #30363d;
-     --link-color: #58a6ff;
-     --link-hover: #79c0ff;
-     --code-bg: #161b22;
-     --code-border: #30363d;
-     --heading-color: #c9d1d9;
-     --nav-bg: #161b22;
-     --nav-text: #c9d1d9;
-     --nav-hover: #58a6ff;
- }
- 
- /* Base styles */
- * {
-     margin: 0;
-     padding: 0;
-     box-sizing: border-box;
- }
- 
- body {
-     font-family: "Cascadia Code", sans-serif;
-     font-optical-sizing: auto;
-     font-size: 16px;
-     line-height: 1.6;
-     color: var(--text-primary);
-     background-color: var(--bg-primary);
-     max-width: 1200px;
-     margin: 0 auto;
-     padding: 20px;
- }
+/* Neobrutalism Design System */
+:root {
+    --bg-primary: #FEFEFE;
+    --bg-secondary: #FFE951;
+    --bg-tertiary: #88C0D0;
+    --text-primary: #000000;
+    --text-secondary: #1A1A1A;
+    --border-color: #000000;
+    --border-width: 3px;
+    --shadow: 6px 6px 0px #000000;
+    --link-color: #FF6B9D;
+    --link-hover: #C9184A;
+    --code-bg: #E0F7FA;
+    --nav-bg: #88C0D0;
+    --nav-text: #000000;
+    --heading-color: #000000;
+    --card-bg: #FFFFFF;
+    --accent-purple: #B388FF;
+    --accent-green: #69F0AE;
+    --accent-orange: #FFB74D;
+}
+
+/* Base styles */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: "Cascadia Code", "Courier New", monospace;
+    font-size: 16px;
+    line-height: 1.6;
+    color: var(--text-primary);
+    background-color: var(--bg-primary);
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+/* Navigation */
+.main-nav {
+    background-color: var(--nav-bg);
+    border: var(--border-width) solid var(--border-color);
+    box-shadow: var(--shadow);
+    margin-bottom: 40px;
+}
+
+.nav-container {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px 30px;
+    flex-wrap: wrap;
+    gap: 20px;
+}
+
+.nav-logo {
+    font-size: 24px;
+    font-weight: 900;
+    color: var(--nav-text);
+    text-decoration: none;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+}
+
+.nav-logo:hover {
+    text-decoration: underline;
+    text-decoration-thickness: 3px;
+}
+
+.nav-links {
+    display: flex;
+    list-style: none;
+    gap: 30px;
+}
+
+.nav-links a {
+    color: var(--nav-text);
+    text-decoration: none;
+    font-weight: 700;
+    font-size: 16px;
+    text-transform: uppercase;
+    transition: all 0.2s ease;
+}
+
+.nav-links a:hover {
+    text-decoration: underline;
+    text-decoration-thickness: 3px;
+    transform: translateY(-2px);
+}
+
+/* Container */
+.container {
+    background-color: var(--card-bg);
+    border: var(--border-width) solid var(--border-color);
+    box-shadow: var(--shadow);
+    padding: 40px;
+    margin-bottom: 40px;
+}
+
+/* Headings */
+h1, h2, h3, h4, h5, h6 {
+    color: var(--heading-color);
+    font-weight: 900;
+    line-height: 1.2;
+    margin-top: 30px;
+    margin-bottom: 20px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+h1 {
+    font-size: 48px;
+    background-color: var(--bg-secondary);
+    padding: 20px;
+    border: var(--border-width) solid var(--border-color);
+    box-shadow: 8px 8px 0px #000000;
+    display: inline-block;
+}
+
+h2 {
+    font-size: 36px;
+    border-bottom: 4px solid var(--border-color);
+    padding-bottom: 10px;
+}
+
+h3 {
+    font-size: 28px;
+    color: var(--link-color);
+}
+
+h4 {
+    font-size: 24px;
+}
+
+/* Paragraphs */
+p {
+    margin-bottom: 20px;
+    font-size: 16px;
+    line-height: 1.8;
+}
+
+/* Code blocks */
+pre {
+    background-color: var(--code-bg);
+    border: var(--border-width) solid var(--border-color);
+    box-shadow: 4px 4px 0px #000000;
+    padding: 20px;
+    margin: 20px 0;
+    overflow-x: auto;
+    font-family: "Cascadia Code", monospace;
+}
+
+code {
+    background-color: var(--code-bg);
+    border: 2px solid var(--border-color);
+    padding: 2px 6px;
+    font-family: "Cascadia Code", monospace;
+    font-size: 14px;
+}
+
+pre code {
+    border: none;
+    padding: 0;
+    background-color: transparent;
+}
+
+/* Links */
+a {
+    color: var(--link-color);
+    text-decoration: none;
+    font-weight: 700;
+    position: relative;
+    transition: all 0.2s ease;
+}
+
+a:hover {
+    color: var(--link-hover);
+    text-decoration: underline;
+    text-decoration-thickness: 2px;
+}
+
+/* Blog List */
+.blog-list {
+    margin: 40px 0;
+}
+
+.blog-list h2 {
+    margin-bottom: 30px;
+}
+
+.blog-list-item {
+    list-style: none;
+}
+
+.blog-list-item li {
+    margin-bottom: 20px;
+}
+
+.blog-list-item-link {
+    display: block;
+    background-color: var(--card-bg);
+    border: var(--border-width) solid var(--border-color);
+    box-shadow: 4px 4px 0px #000000;
+    padding: 25px;
+    transition: all 0.2s ease;
+}
+
+.blog-list-item-link:hover {
+    transform: translate(-2px, -2px);
+    box-shadow: 6px 6px 0px #000000;
+    text-decoration: none;
+}
+
+.blog-list-item-title {
+    font-size: 22px;
+    font-weight: 900;
+    color: var(--text-primary);
+    margin-bottom: 10px;
+    text-transform: uppercase;
+}
+
+.blog-list-item-desc {
+    color: var(--text-secondary);
+    margin-bottom: 10px;
+    font-size: 14px;
+}
+
+.blog-list-item-date {
+    color: var(--text-secondary);
+    font-size: 12px;
+    font-weight: 700;
+    background-color: var(--bg-secondary);
+    display: inline-block;
+    padding: 5px 10px;
+    border: 2px solid var(--border-color);
+}
+
+/* Blog Series TOC */
+.blog-series {
+    background-color: var(--accent-purple);
+    border: var(--border-width) solid var(--border-color);
+    box-shadow: var(--shadow);
+    padding: 30px;
+    margin: 30px 0;
+}
+
+.blog-series ol {
+    list-style-position: inside;
+    margin-left: 0;
+}
+
+.blog-series-item {
+    margin-bottom: 15px;
+    font-size: 18px;
+}
+
+.blog-series-toc-link {
+    color: var(--text-primary);
+    font-weight: 700;
+}
+
+.blog-series-toc-link:hover {
+    color: var(--link-hover);
+}
+
+/* Footer */
+.main-footer {
+    background-color: var(--text-primary);
+    color: var(--bg-primary);
+    border: var(--border-width) solid var(--border-color);
+    box-shadow: var(--shadow);
+    padding: 30px;
+    text-align: center;
+    margin-top: 40px;
+}
+
+.main-footer p {
+    margin: 0;
+    font-weight: 700;
+}
+
+/* Lists */
+ul, ol {
+    margin: 20px 0;
+    padding-left: 40px;
+}
+
+li {
+    margin-bottom: 10px;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    body {
+        padding: 10px;
+    }
+    
+    .container {
+        padding: 20px;
+    }
+    
+    .nav-container {
+        flex-direction: column;
+        align-items: flex-start;
+        padding: 15px;
+    }
+    
+    .nav-links {
+        flex-direction: column;
+        gap: 15px;
+    }
+    
+    h1 {
+        font-size: 32px;
+        padding: 15px;
+    }
+    
+    h2 {
+        font-size: 28px;
+    }
+}

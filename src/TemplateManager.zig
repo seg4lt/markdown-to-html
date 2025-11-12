@@ -103,10 +103,24 @@ pub fn copyDefaultFiles(self: *Self, output_path: []const u8) !void {
         const dest_path = try std.fs.path.join(self.gpa, &[_][]const u8{ output_path, file_name });
         defer self.gpa.free(dest_path);
 
+        // Try to read from template folder first
         const content = std.fs.cwd().readFileAlloc(self.gpa, src_path, MAX_FILE_SIZE) catch |err| {
             if (err == error.FileNotFound) {
-                std.log.warn("file {s} not found for copying, skipping copy.", .{src_path});
-                break;
+                // Fallback to default styles from tmpl.zig
+                std.log.info("Template file {s} not found, using default from tmpl.zig", .{file_name});
+                const default_content = if (mem.eql(u8, file_name, "styles.css"))
+                    tmpl.DEFAULT_STYLES
+                else
+                    null;
+                
+                if (default_content) |content_str| {
+                    const output_file = try std.fs.cwd().createFile(dest_path, .{});
+                    defer output_file.close();
+                    try output_file.writeAll(content_str);
+                } else {
+                    std.log.warn("No default content for {s}, skipping.", .{file_name});
+                }
+                continue;
             } else {
                 return err;
             }

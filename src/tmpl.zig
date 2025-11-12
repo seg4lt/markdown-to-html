@@ -124,7 +124,7 @@ pub const DEFAULT_MAIN_NAV_ITEM_HTML =
     \\            <li><a href="{{link}}">{{title}}</a></li>
 ;
 
-const DEFAULT_STYLES =
+pub const DEFAULT_STYLES =
     \\ /* Base theme variables */
     \\ :root {
     \\     --bg-primary: #ffffff;
