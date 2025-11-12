@@ -2,6 +2,7 @@ pub const MAGIC_MARKER_PREFIX = "{{ @@";
 pub const MAGIC_INCLUDE_HTML = "@@include_html";
 pub const MAGIC_INCLUDE_HTML_DATA = "```@@include_html_data";
 pub const MAGIC_BLOG_LIST = "@@blog_list";
+pub const MAGIC_BLOG_SERIES_TOC = "@@blog_series_toc";
 pub const MAGIC_FRONTMATTER = "@@frontmatter";
 
 pub const DEFAULT_BASE_HTML =
@@ -64,4 +65,19 @@ pub const DEFAULT_BLOG_LIST_ITEM_HTML =
     \\         <div class="blog-list-item-date">{{date}}</div>
     \\    </a>
     \\ </li>
+;
+
+pub const DEFAULT_BLOG_SERIES_SECTION_WRAPPER_HTML =
+    \\ <section class="blog-series table-of-content">
+    \\     <ol>
+    \\            {{content}}
+    \\     </ol>
+    \\ </section>
+;
+pub const DEFAULT_BLOG_SERIES_TOC_ITEM_HTML =
+    \\         <li class="blog-series-item">
+    \\             <a href="{{link}}" class="blog-series-toc-link">
+    \\                 {{title}}
+    \\             </a>
+    \\         </li>
 ;

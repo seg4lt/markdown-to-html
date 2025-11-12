@@ -121,6 +121,9 @@ const HtmlGenerator = struct {
         if (mem.eql(u8, marker.name, tmpl.MAGIC_BLOG_LIST)) {
             return try self.generateBlogList(marker);
         }
+        if (mem.eql(u8, marker.name, tmpl.MAGIC_BLOG_SERIES_TOC)) {
+            return try self.generateBlogSeriesTableOfContent(marker);
+        }
         std.log.err("unknown magic marker -- `{s}`", .{marker.name});
         return Error.UnknownMagicMarker;
 
@@ -131,6 +134,31 @@ const HtmlGenerator = struct {
         // }
         // @panic("... not implemented ...");
     }
+    fn generateBlogSeriesTableOfContent(self: *@This(), marker: Node.MagicMarker) Error![]u8 {
+        _ = marker;
+
+        const blog_list = self.groups.get(self.document.file_path) orelse return "";
+
+        var list_accum = std.io.Writer.Allocating.init(self.gpa);
+        // TODO(seg4lt) - need to sort by index, but let's do that later
+        for (blog_list.items) |info| {
+            const link = try std.fmt.allocPrint(self.gpa, "/{s}/{s}.html", .{ info.file_path, info.file_name[0 .. info.file_name.len - 3] }); // remove .md
+            defer self.gpa.free(link);
+            const item_html = try self.replacePlaceholdersOwned(
+                tmpl.DEFAULT_BLOG_SERIES_TOC_ITEM_HTML,
+                &[_][]const u8{ "{{link}}", "{{title}}" },
+                &[_][]const u8{ link, info.frontmatter.title },
+            );
+            defer self.gpa.free(item_html);
+            try list_accum.writer.print("{s}\n", .{item_html});
+        }
+        const blog_list_html = try self.replacePlaceholdersOwned(
+            tmpl.DEFAULT_BLOG_SERIES_SECTION_WRAPPER_HTML,
+            &[_][]const u8{"{{content}}"},
+            &[_][]const u8{try list_accum.toOwnedSlice()},
+        );
+        return blog_list_html;
+    }
 
     fn generateBlogList(self: *@This(), marker: Node.MagicMarker) Error![]u8 {
         _ = marker;
@@ -139,7 +167,7 @@ const HtmlGenerator = struct {
         var list_accum = std.io.Writer.Allocating.init(self.gpa);
         // TODO(seg4lt) - need to sort by date desc, but let's do that later
         for (blog_list.items) |info| {
-            const link = try std.fmt.allocPrint(self.gpa, "{s}/{s}.html", .{ info.file_path, info.file_name[0..info.file_name.len-3]}); // remove .md
+            const link = try std.fmt.allocPrint(self.gpa, "/{s}/{s}.html", .{ info.file_path, info.file_name[0 .. info.file_name.len - 3] }); // remove .md
             defer self.gpa.free(link);
             const item_html = try self.replacePlaceholdersOwned(
                 tmpl.DEFAULT_BLOG_LIST_ITEM_HTML,

@@ -7,3 +7,5 @@
 ```
 
 # Test Series 01
+
+{{ @@blog_series_toc }}
