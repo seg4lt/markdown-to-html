@@ -44,7 +44,7 @@ pub fn generateAll(gpa: Allocator, docs: *const ArrayList(Document), output_base
         // Apply base template with main_nav
         const full_html = try TemplateManager.replacePlaceholders(
             gpa,
-            tmpl.DEFAULT_BASE_HTML,
+            try tmpl_manager.get(tmpl.TMPL_BASE_HTML.name),
             &[_][]const u8{ "{{title}}", "{{content}}", "{{main_nav}}" },
             &[_][]const u8{ doc.frontmatter.value.title, html, try tmpl_manager.getMainNav() },
         );
@@ -95,7 +95,7 @@ const HtmlGenerator = struct {
         };
     }
 
-    fn generate(self: *@This()) Error![]u8 {
+    fn generate(self: *@This()) ![]u8 {
         for (self.document.nodes.items) |node| {
             if (node == .code and node.code.language != null and mem.eql(u8, node.code.language.?, tmpl.MAGIC_FRONTMATTER)) {
                 continue;
@@ -106,7 +106,7 @@ const HtmlGenerator = struct {
         return try a.toOwnedSlice();
     }
 
-    fn generateNode(self: *@This(), node: Node) Error!void {
+    fn generateNode(self: *@This(), node: Node) !void {
         const final_html = switch (node) {
             .h1, .h2, .h3, .h4 => try self.generateHeading(node),
             .p => |text| try self.generateParagraph(text),
@@ -118,7 +118,7 @@ const HtmlGenerator = struct {
         try self.accumulator.writer.flush();
     }
 
-    fn generateMagicMarker(self: *@This(), marker: Node.MagicMarker) Error![]u8 {
+    fn generateMagicMarker(self: *@This(), marker: Node.MagicMarker) ![]u8 {
         if (mem.eql(u8, marker.name, tmpl.MAGIC_BLOG_LIST)) {
             return try self.generateBlogList(marker);
         }
@@ -135,7 +135,7 @@ const HtmlGenerator = struct {
         // }
         // @panic("... not implemented ...");
     }
-    fn generateBlogSeriesTableOfContent(self: *@This(), marker: Node.MagicMarker) Error![]u8 {
+    fn generateBlogSeriesTableOfContent(self: *@This(), marker: Node.MagicMarker) ![]u8 {
         _ = marker;
 
         const blog_list = self.groups.get(self.document.file_path) orelse return "";
@@ -147,7 +147,7 @@ const HtmlGenerator = struct {
             defer self.gpa.free(link);
             const item_html = try TemplateManager.replacePlaceholders(
                 self.gpa,
-                tmpl.DEFAULT_BLOG_SERIES_TOC_ITEM_HTML,
+                try self.template_manager.get(tmpl.TMPL_BLOG_SERIES_TOC_ITEM_HTML.name),
                 &[_][]const u8{ "{{link}}", "{{title}}" },
                 &[_][]const u8{ link, info.frontmatter.title },
             );
@@ -156,14 +156,14 @@ const HtmlGenerator = struct {
         }
         const blog_list_html = try TemplateManager.replacePlaceholders(
             self.gpa,
-            tmpl.DEFAULT_BLOG_SERIES_SECTION_WRAPPER_HTML,
+            try self.template_manager.get(tmpl.TMPL_BLOG_SERIES_SECTION_WRAPPER_HTML.name),
             &[_][]const u8{"{{content}}"},
             &[_][]const u8{try list_accum.toOwnedSlice()},
         );
         return blog_list_html;
     }
 
-    fn generateBlogList(self: *@This(), marker: Node.MagicMarker) Error![]u8 {
+    fn generateBlogList(self: *@This(), marker: Node.MagicMarker) ![]u8 {
         _ = marker;
         const blog_list = self.groups.get("blog") orelse return "";
 
@@ -174,7 +174,7 @@ const HtmlGenerator = struct {
             defer self.gpa.free(link);
             const item_html = try TemplateManager.replacePlaceholders(
                 self.gpa,
-                tmpl.DEFAULT_BLOG_LIST_ITEM_HTML,
+                try self.template_manager.get(tmpl.TMPL_BLOG_LIST_ITEM_HTML.name),
                 &[_][]const u8{ "{{link}}", "{{title}}", "{{desc}}", "{{date}}" },
                 &[_][]const u8{ link, info.frontmatter.title, info.frontmatter.description, info.frontmatter.date },
             );
@@ -183,21 +183,21 @@ const HtmlGenerator = struct {
         }
         const blog_list_html = try TemplateManager.replacePlaceholders(
             self.gpa,
-            tmpl.DEFAULT_BLOG_LIST_HTML,
+            try self.template_manager.get(tmpl.TMPL_BLOG_LIST_HTML.name),
             &[_][]const u8{"{{content}}"},
             &[_][]const u8{try list_accum.toOwnedSlice()},
         );
         return blog_list_html;
     }
 
-    fn generateCodeBlock(self: *@This(), code_block: Node.CodeBlock) Error![]u8 {
+    fn generateCodeBlock(self: *@This(), code_block: Node.CodeBlock) ![]u8 {
         const class_attr = if (code_block.language) |lang|
             try std.fmt.allocPrint(self.gpa, " class=\"language-{s}\"", .{lang})
         else
             "";
         defer self.gpa.free(class_attr);
 
-        const tmpl_str = tmpl.DEFAULT_CODE_BLOCK;
+        const tmpl_str = try self.template_manager.get(tmpl.TMPL_CODE_BLOCK_HTML.name);
         const final_html = try TemplateManager.replacePlaceholders(
             self.gpa,
             tmpl_str,
@@ -207,18 +207,18 @@ const HtmlGenerator = struct {
         return final_html;
     }
 
-    fn generateParagraph(self: *@This(), p_content: []const u8) Error![]u8 {
+    fn generateParagraph(self: *@This(), p_content: []const u8) ![]u8 {
         return std.fmt.allocPrint(self.gpa,
             \\ <p>{s}</p>
         , .{p_content});
     }
 
-    fn generateHeading(self: *@This(), node: Node) Error![]u8 {
+    fn generateHeading(self: *@This(), node: Node) ![]u8 {
         const text = switch (node) {
             .h1, .h2, .h3, .h4 => |text| text,
             else => std.debug.panic("** bug ** not reachable - only heading should reach here", .{}),
         };
-        const tmpl_str = tmpl.DEFAULT_HEADING_HTML;
+        const tmpl_str = try self.template_manager.get(tmpl.TMPL_HEADING_HTML.name);
         const final_html = try TemplateManager.replacePlaceholders(
             self.gpa,
             tmpl_str,

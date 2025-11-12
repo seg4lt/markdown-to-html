@@ -23,6 +23,23 @@ pub fn deinit(self: *Self) void {
     self.map.deinit();
 }
 
+pub fn get(self: *Self, tmpl_name: []const u8) ![]const u8 {
+    if (self.map.get(tmpl_name)) |tmpl_content| {
+        return tmpl_content;
+    }
+    const file_path = try std.fs.path.join(self.gpa, &[_][]const u8{
+        self.base_path,
+        self.tmpl_path,
+        tmpl_name,
+    });
+    defer self.gpa.free(file_path);
+
+    const file_content = try std.fs.cwd().readFileAlloc(self.gpa, file_path, common.MAX_FILE_SIZE);
+
+    try self.map.put(tmpl_name, file_content);
+    return file_content;
+}
+
 pub fn getMainNav(self: *Self) ![]const u8 {
     const NAV_MENU_KEY = "__main_nav__";
 
@@ -37,7 +54,7 @@ pub fn getMainNav(self: *Self) ![]const u8 {
 
     var it = dir.iterate();
     while (try it.next()) |dir_entry| {
-        if (dir_entry.kind == .directory and !mem.eql(u8, dir_entry.name, self.tmpl_path)) {
+        if (dir_entry.kind == .directory and !mem.eql(u8, dir_entry.name, self.tmpl_path) and !mem.startsWith(u8, dir_entry.name, "__")) {
             try top_level_dirs.append(self.gpa, dir_entry.name);
         }
     }

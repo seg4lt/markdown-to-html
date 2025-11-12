@@ -5,7 +5,33 @@ pub const MAGIC_BLOG_LIST = "@@blog_list";
 pub const MAGIC_BLOG_SERIES_TOC = "@@blog_series_toc";
 pub const MAGIC_FRONTMATTER = "@@frontmatter";
 
-pub const DEFAULT_BASE_HTML =
+pub const Template = struct { name: []const u8, content: []const u8 };
+
+pub const TMPL_BASE_HTML: Template = .{ .name = "base.html", .content = DEFAULT_BASE_HTML };
+pub const TMPL_HEADING_HTML: Template = .{ .name = "heading.html", .content = DEFAULT_HEADING_HTML };
+pub const TMPL_CODE_BLOCK_HTML: Template = .{ .name = "code_block.html", .content = DEFAULT_CODE_BLOCK };
+pub const TMPL_BLOG_LIST_HTML: Template = .{ .name = "blog_list.html", .content = DEFAULT_BLOG_LIST_HTML };
+pub const TMPL_BLOG_LIST_ITEM_HTML: Template = .{ .name = "blog_list_item.html", .content = DEFAULT_BLOG_LIST_ITEM_HTML };
+pub const TMPL_BLOG_SERIES_SECTION_WRAPPER_HTML: Template = .{ .name = "blog_series_section_wrapper.html", .content = DEFAULT_BLOG_SERIES_SECTION_WRAPPER_HTML };
+pub const TMPL_BLOG_SERIES_TOC_ITEM_HTML: Template = .{ .name = "blog_series_toc_item.html", .content = DEFAULT_BLOG_SERIES_TOC_ITEM_HTML };
+pub const TMPL_MAIN_NAV_HTML: Template = .{ .name = "main_nav.html", .content = DEFAULT_MAIN_NAV_HTML };
+pub const TMPL_MAIN_NAV_ITEM_HTML: Template = .{ .name = "main_nav_item.html", .content = DEFAULT_MAIN_NAV_ITEM_HTML };
+pub const TMPL_STYLES_CSS: Template = .{ .name = "styles.css", .content = DEFAULT_STYLES };
+
+pub const TEMPLATES = [_]Template{
+    TMPL_BASE_HTML,
+    TMPL_HEADING_HTML,
+    TMPL_CODE_BLOCK_HTML,
+    TMPL_BLOG_LIST_HTML,
+    TMPL_BLOG_LIST_ITEM_HTML,
+    TMPL_BLOG_SERIES_SECTION_WRAPPER_HTML,
+    TMPL_BLOG_SERIES_TOC_ITEM_HTML,
+    TMPL_MAIN_NAV_HTML,
+    TMPL_MAIN_NAV_ITEM_HTML,
+    TMPL_STYLES_CSS,
+};
+
+const DEFAULT_BASE_HTML =
     \\<!DOCTYPE html>
     \\<html lang="en">
     \\<head>
@@ -41,15 +67,15 @@ pub const DEFAULT_BASE_HTML =
     \\</body>
     \\</html>
 ;
-pub const DEFAULT_HEADING_HTML =
+const DEFAULT_HEADING_HTML =
     \\    <h{{level}}>{{content}}</h{{level}}>
 ;
 
-pub const DEFAULT_CODE_BLOCK =
+const DEFAULT_CODE_BLOCK =
     \\    <pre><code{{class}}>{{content}}</code></pre>
 ;
 
-pub const DEFAULT_BLOG_LIST_HTML =
+const DEFAULT_BLOG_LIST_HTML =
     \\<section class="blog-list">
     \\    <h2>Recent Blogs</h2>
     \\    <ul class="blog-list-item">
@@ -57,7 +83,7 @@ pub const DEFAULT_BLOG_LIST_HTML =
     \\    </ul>
     \\</section>
 ;
-pub const DEFAULT_BLOG_LIST_ITEM_HTML =
+const DEFAULT_BLOG_LIST_ITEM_HTML =
     \\ <li class="blog-list-item">
     \\     <a href="{{link}}" class="blog-list-item-link">
     \\         <div class="blog-list-item-title">{{title}}</div>
@@ -67,7 +93,7 @@ pub const DEFAULT_BLOG_LIST_ITEM_HTML =
     \\ </li>
 ;
 
-pub const DEFAULT_BLOG_SERIES_SECTION_WRAPPER_HTML =
+const DEFAULT_BLOG_SERIES_SECTION_WRAPPER_HTML =
     \\ <section class="blog-series table-of-content">
     \\     <ol>
     \\            {{content}}
@@ -75,7 +101,7 @@ pub const DEFAULT_BLOG_SERIES_SECTION_WRAPPER_HTML =
     \\ </section>
 ;
 
-pub const DEFAULT_BLOG_SERIES_TOC_ITEM_HTML =
+const DEFAULT_BLOG_SERIES_TOC_ITEM_HTML =
     \\         <li class="blog-series-item">
     \\             <a href="{{link}}" class="blog-series-toc-link">
     \\                 {{title}}
@@ -98,7 +124,7 @@ pub const DEFAULT_MAIN_NAV_ITEM_HTML =
     \\            <li><a href="{{link}}">{{title}}</a></li>
 ;
 
-pub const DEFAULT_STYLES =
+const DEFAULT_STYLES =
     \\ /* Base theme variables */
     \\ :root {
     \\     --bg-primary: #ffffff;

@@ -29,6 +29,7 @@ fn walkDir(gpa: Allocator, dir: Dir, relative_path: []const u8, tmpl_path: []con
             },
             .directory => {
                 if (relative_path.len == 0 and mem.eql(u8, dir_entry.name, tmpl_path)) continue;
+                if (mem.startsWith(u8, dir_entry.name, "__")) continue;
 
                 const new_rel_path = if (relative_path.len > 0)
                     try path.join(gpa, &[_][]const u8{ relative_path, dir_entry.name })

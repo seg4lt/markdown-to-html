@@ -47,20 +47,7 @@ fn outputDefaultTemplates(gpa: Allocator) !void {
         if (err != error.PathAlreadyExists) return err;
     };
 
-    const templates = [_]struct { name: []const u8, content: []const u8 }{
-        .{ .name = "base.html", .content = tmpl.DEFAULT_BASE_HTML },
-        .{ .name = "heading.html", .content = tmpl.DEFAULT_HEADING_HTML },
-        .{ .name = "code_block.html", .content = tmpl.DEFAULT_CODE_BLOCK },
-        .{ .name = "blog_list.html", .content = tmpl.DEFAULT_BLOG_LIST_HTML },
-        .{ .name = "blog_list_item.html", .content = tmpl.DEFAULT_BLOG_LIST_ITEM_HTML },
-        .{ .name = "blog_series_section_wrapper.html", .content = tmpl.DEFAULT_BLOG_SERIES_SECTION_WRAPPER_HTML },
-        .{ .name = "blog_series_toc_item.html", .content = tmpl.DEFAULT_BLOG_SERIES_TOC_ITEM_HTML },
-        .{ .name = "main_nav.html", .content = tmpl.DEFAULT_MAIN_NAV_HTML },
-        .{ .name = "main_nav_item.html", .content = tmpl.DEFAULT_MAIN_NAV_ITEM_HTML },
-        .{ .name = "styles.css", .content = tmpl.DEFAULT_STYLES },
-    };
-
-    for (templates) |template| {
+    for (tmpl.TEMPLATES) |template| {
         const path = try std.fs.path.join(gpa, &[_][]const u8{ output_dir, template.name });
         defer gpa.free(path);
 
