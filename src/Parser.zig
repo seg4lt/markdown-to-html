@@ -56,7 +56,7 @@ const Parser = struct {
     tokenizer: Tokenizer,
     gpa: Allocator,
 
-    pub const ParseError = error{ OutOfMemory, InvalidMagicMarker, FrontmatterNotFound } || std.json.ParseError(std.json.Scanner);
+    pub const ParseError = error{ OutOfMemory, InvalidMagicMarker, FrontmatterNotFound, InvalidSpecialBlockquote } || std.json.ParseError(std.json.Scanner);
 
     fn init(gpa: Allocator, file_path: []const u8, file_name: []const u8, source: []const u8) @This() {
         return .{
@@ -101,8 +101,65 @@ const Parser = struct {
             try self.parseMagicMarker();
             return;
         }
+        if (self.isBlockquote()) {
+            try self.parseBlockquote();
+            return;
+        }
 
         try self.parseParagraph();
+    }
+
+    fn isBlockquote(self: *@This()) bool {
+        const line = self.tokenizer.peekLine();
+        return mem.startsWith(u8, line, "> ");
+    }
+
+    fn parseBlockquote(self: *@This()) ParseError!void {
+        var acc: ArrayList(u8) = .empty;
+        var first_line = true;
+        var kind: Node.Blockquote.Kind = .normal;
+        while (!self.tokenizer.isAtEnd()) {
+            var line = self.tokenizer.peekLine();
+            if (!mem.startsWith(u8, line, "> ")) break;
+
+            line = std.mem.trim(u8, line, " \t\r");
+            _ = self.tokenizer.consumeLine();
+
+            if (first_line and mem.eql(u8, line, "> [!NOTE]")) {
+                kind = .note;
+                continue;
+            }
+            if (first_line and mem.eql(u8, line, "> [!TIP]")) {
+                kind = .tip;
+                continue;
+            }
+            if (first_line and mem.eql(u8, line, "> [!IMPORTANT]")) {
+                kind = .important;
+                continue;
+            }
+            if (first_line and mem.eql(u8, line, "> [!WARNING]")) {
+                kind = .warning;
+                continue;
+            }
+            if (first_line and mem.eql(u8, line, "> [!CAUTION]")) {
+                kind = .caution;
+                continue;
+            }
+            
+            first_line = false;
+            const content = std.mem.trim(u8, line[2..], " \t\r");
+            try acc.appendSlice(self.gpa, content);
+            try acc.append(self.gpa, '\n');
+        }
+        if (kind != .normal and acc.items.len == 0) {
+            std.log.err("{s} found without any notes following it", .{@tagName(kind)});
+            return error.InvalidSpecialBlockquote;
+        }
+        const node: Node = .{ .block_quote = .{
+            .kind = kind,
+            .content = try acc.toOwnedSlice(self.gpa),
+        } };
+        try self.nodes.append(self.gpa, node);
     }
 
     fn isMagicMarker(self: *@This()) bool {

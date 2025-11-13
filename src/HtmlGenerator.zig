@@ -112,10 +112,31 @@ const HtmlGenerator = struct {
             .p => |text| try self.generateParagraph(text),
             .code => |code_block| try self.generateCodeBlock(code_block),
             .magic_marker => |marker| try self.generateMagicMarker(marker),
+            .block_quote => |bq| try self.generateBlockquote(bq),
         };
         defer self.gpa.free(final_html);
         try self.accumulator.writer.print("\n{s}\n", .{final_html});
         try self.accumulator.writer.flush();
+    }
+    fn generateBlockquote(self: *@This(), bq: Node.Blockquote) ![]u8 {
+        var iter = std.mem.splitAny(u8, bq.content, "\n");
+        var acc: ArrayList(u8) = .empty;
+
+        if (bq.kind != .normal) {
+            try acc.appendSlice(self.gpa, try std.fmt.allocPrint(self.gpa, "<strong>{s}</strong>\n", .{@tagName(bq.kind)}));
+        }
+        while (iter.next()) |line| {
+            if (mem.trim(u8, line, " \t\r").len == 0) continue;
+            try acc.appendSlice(self.gpa, try std.fmt.allocPrint(self.gpa, "<p>{s}<p>", .{line}));
+        }
+
+        const html = try TemplateManager.replacePlaceholders(
+            self.gpa,
+            try self.template_manager.get(tmpl.TMPL_BLOCK_QUOTE.name),
+            &[_][]const u8{ "{{variant}}", "{{content}}" },
+            &[_][]const u8{ @tagName(bq.kind), try acc.toOwnedSlice(self.gpa) },
+        );
+        return html;
     }
 
     fn generateMagicMarker(self: *@This(), marker: Node.MagicMarker) ![]u8 {

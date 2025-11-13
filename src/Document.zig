@@ -30,6 +30,14 @@ pub const Node = union(enum) {
     p: []const u8,
     code: CodeBlock,
     magic_marker: MagicMarker,
+    block_quote: Blockquote,
+
+    pub const Blockquote = struct {
+        kind: Kind,
+        content: []const u8,
+
+        pub const Kind = enum { normal, note, tip, important, warning, caution };
+    };
 
     pub const CodeBlock = struct {
         content: []const u8,

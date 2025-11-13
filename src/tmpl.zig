@@ -19,6 +19,7 @@ pub const TMPL_TEXT_LINK: Template = .{ .name = "text_link.html", .content = DEF
 pub const TMPL_TEXT_LINK_ALT: Template = .{ .name = "text_link_alt.html", .content = DEFAULT_TEXT_LINK_ALT_HTML };
 pub const TMPL_BUTTON_LINK: Template = .{ .name = "button_link.html", .content = DEFAULT_BUTTON_LINK_HTML };
 pub const TMPL_CARD: Template = .{ .name = "card.html", .content = DEFAULT_CARD_HTML };
+pub const TMPL_BLOCK_QUOTE: Template = .{ .name = "block_quote.html", .content = DEFAULT_BLOCK_QUOTE_HTML };
 pub const TMPL_STYLES_CSS: Template = .{ .name = "styles.css", .content = DEFAULT_STYLES };
 
 pub const TEMPLATES = [_]Template{
@@ -34,6 +35,7 @@ pub const TEMPLATES = [_]Template{
     TMPL_TEXT_LINK_ALT,
     TMPL_BUTTON_LINK,
     TMPL_CARD,
+    TMPL_BLOCK_QUOTE,
     TMPL_STYLES_CSS,
 };
 
@@ -147,6 +149,9 @@ pub const DEFAULT_TEXT_LINK_ALT_HTML =
 ;
 pub const DEFAULT_BUTTON_LINK_HTML =
     \\<a href="{{link}}" class="button-link">{{text}}</a>
+;
+const DEFAULT_BLOCK_QUOTE_HTML =
+    \\ <blockquote class="quote {{variant}}-quote">{{content}}</blockquote>
 ;
 
 pub const CardType = enum { primary, accent, secondary };
