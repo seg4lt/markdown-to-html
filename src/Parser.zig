@@ -56,7 +56,7 @@ const Parser = struct {
     tokenizer: Tokenizer,
     gpa: Allocator,
 
-    pub const ParseError = error{ OutOfMemory, InvalidMagicMarker, FrontmatterNotFound, InvalidSpecialBlockquote } || std.json.ParseError(std.json.Scanner);
+    pub const ParseError = error{ OutOfMemory, InvalidMagicMarker, FrontmatterNotFound, InvalidSpecialBlockquote, InvalidList } || std.json.ParseError(std.json.Scanner);
 
     fn init(gpa: Allocator, file_path: []const u8, file_name: []const u8, source: []const u8) @This() {
         return .{
@@ -69,7 +69,7 @@ const Parser = struct {
         };
     }
 
-    fn parse(self: *@This()) ParseError!Document {
+    fn parse(self: *@This()) !Document {
         while (!self.tokenizer.isAtEnd()) try self.parseNextNode();
         if (self.frontmatter == null) {
             std.log.err("frontmatter not found on {s}", .{self.file_path});
@@ -78,7 +78,7 @@ const Parser = struct {
         return Document.init(self.gpa, self.nodes, self.frontmatter.?, self.file_path, self.file_name);
     }
 
-    fn parseNextNode(self: *@This()) ParseError!void {
+    fn parseNextNode(self: *@This()) !void {
         self.tokenizer.skipWhitespace();
 
         const ch = self.tokenizer.peek() orelse return;
@@ -110,8 +110,72 @@ const Parser = struct {
             try self.parseDivider();
             return;
         }
+        if (isList(self.tokenizer.peekLine())) {
+            try self.parseList();
+            return;
+        }
 
         try self.parseParagraph();
+    }
+
+    fn isList(line: []const u8) bool {
+        if (isUnorderedList(line)) return true;
+        if (isOrderedList(line)) return true;
+        return false;
+    }
+
+    fn parseList(self: *@This()) !void {
+        const node = try self.parseListAndGetNode(0, 0);
+        try self.nodes.append(self.gpa, .{ .list = node });
+    }
+
+    fn parseListAndGetNode(self: *@This(), depth: usize, indent: usize) !*Node.List {
+        const list = try self.gpa.create(Node.List);
+        list.* = .empty;
+        list.depth = depth;
+        if (isOrderedList(self.tokenizer.peekLine())) list.kind = .ordered;
+
+        while (!self.tokenizer.isAtEnd()) {
+            const peeked_line = self.tokenizer.peekLine();
+            if (!isList(peeked_line)) {
+                break;
+            }
+            const current_indent = getIndent(peeked_line);
+            if (current_indent > indent) {
+                const inner_list = try self.parseListAndGetNode(depth + 1, current_indent);
+                try list.items.append(self.gpa, .{ .list = inner_list });
+                continue;
+            }
+            if (current_indent < indent and current_indent > 0) {
+                return list;
+            }
+            const line = self.tokenizer.consumeLine();
+            try list.items.append(self.gpa, .{ .p = try self.gpa.dupe(u8, line) });
+        }
+
+        return list;
+    }
+    fn getIndent(line: []const u8) usize {
+        var count: usize = 0;
+        for (line) |c| {
+            switch (c) {
+                ' ' => count += 1,
+                '\t' => count += 4,
+                else => break,
+            }
+        }
+        return count;
+    }
+
+    fn isUnorderedList(line: []const u8) bool {
+        const trimmed = std.mem.trim(u8, line, " \t\r");
+        if (mem.startsWith(u8, trimmed, "- ") or mem.startsWith(u8, trimmed, "* ") or mem.startsWith(u8, trimmed, "+ ")) return true;
+        return false;
+    }
+    fn isOrderedList(line: []const u8) bool {
+        const trimmed = std.mem.trim(u8, line, " \t\r");
+        if (trimmed.len >= 2 and std.ascii.isDigit(trimmed[0]) and trimmed[1] == '.' and trimmed[2] == ' ') return true;
+        return false;
     }
 
     fn isDivider(self: *@This()) bool {
@@ -119,7 +183,8 @@ const Parser = struct {
         const trimmed = std.mem.trim(u8, line, " \t\r");
         return mem.eql(u8, trimmed, "---") or mem.eql(u8, trimmed, "***") or mem.eql(u8, trimmed, "___");
     }
-    fn parseDivider(self: *@This()) ParseError!void {
+
+    fn parseDivider(self: *@This()) !void {
         const line = self.tokenizer.consumeLine();
         const trimmed = std.mem.trim(u8, line, " \t\r");
         var divider_type: Node.DividerType = .normal;
@@ -139,7 +204,7 @@ const Parser = struct {
         return mem.startsWith(u8, line, "> ");
     }
 
-    fn parseBlockquote(self: *@This()) ParseError!void {
+    fn parseBlockquote(self: *@This()) !void {
         var acc: ArrayList(u8) = .empty;
         var first_line = true;
         var kind: Node.Blockquote.Kind = .normal;
@@ -192,7 +257,7 @@ const Parser = struct {
         return mem.startsWith(u8, line, tmpl.MAGIC_MARKER_PREFIX);
     }
 
-    fn parseMagicMarker(self: *@This()) ParseError!void {
+    fn parseMagicMarker(self: *@This()) !void {
         const line = self.tokenizer.consumeLine();
         var token_it = std.mem.tokenizeScalar(u8, line, ' ');
         _ = token_it.next(); // consume {{
@@ -227,7 +292,7 @@ const Parser = struct {
         return mem.startsWith(u8, line, "```");
     }
 
-    fn parseCodeBlockGetNode(self: *@This()) ParseError!Node {
+    fn parseCodeBlockGetNode(self: *@This()) !Node {
         var acc: ArrayList(u8) = .empty;
         defer acc.deinit(self.gpa);
 
@@ -259,7 +324,7 @@ const Parser = struct {
         return node;
     }
 
-    fn parseCodeBlock(self: *@This()) ParseError!void {
+    fn parseCodeBlock(self: *@This()) !void {
         const node = try self.parseCodeBlockGetNode();
         if (node == .code and node.code.language != null and mem.eql(u8, node.code.language.?, tmpl.MAGIC_FRONTMATTER)) {
             const frontmatter_json = node.code.content;
@@ -270,7 +335,7 @@ const Parser = struct {
         try self.nodes.append(self.gpa, node);
     }
 
-    fn parseParagraph(self: *@This()) ParseError!void {
+    fn parseParagraph(self: *@This()) !void {
         var acc: ArrayList(u8) = .empty;
         while (!self.tokenizer.isAtEnd()) {
             const line = self.tokenizer.consumeLine();
@@ -280,6 +345,7 @@ const Parser = struct {
             if (self.isCodeBlock()) break;
             if (self.isMagicMarker()) break;
             if (self.isBlockquote()) break;
+            if (self.isDivider()) break;
             if (mem.trim(u8, self.tokenizer.peekLine(), " \t\r").len == 0) break;
             try acc.appendSlice(self.gpa, " ");
         }
@@ -291,7 +357,7 @@ const Parser = struct {
         return self.tokenizer.peek() == '#';
     }
 
-    fn parseHeading(self: *@This()) ParseError!void {
+    fn parseHeading(self: *@This()) !void {
         var level: usize = 0;
         while (self.tokenizer.peek() == '#') {
             _ = self.tokenizer.advance();

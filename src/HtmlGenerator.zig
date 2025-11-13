@@ -114,6 +114,7 @@ const HtmlGenerator = struct {
             .magic_marker => |marker| try self.generateMagicMarker(marker),
             .block_quote => |bq| try self.generateBlockquote(bq),
             .divider => |dtype| try self.generateDividerType(dtype),
+            .list => |list| try self.generateList(list),
         };
         defer self.gpa.free(almost_final_html);
 
@@ -123,7 +124,77 @@ const HtmlGenerator = struct {
         try self.accumulator.writer.print("\n{s}\n", .{final_html});
         try self.accumulator.writer.flush();
     }
-
+    fn generateList(self: *@This(), list: *Node.List) ![]u8 {
+        const ul_tmpl =
+            \\ <ul class="{{variant}}-unordered-list {{variant}}-order-list-depth-{{depth}}">
+            \\   {{items}}
+            \\ </ul>
+        ;
+        const ol_tmpl =
+            \\ <ol class="{{variant}}-ordered-list {{variant}}-order-list-depth-{{depth}}">
+            \\   {{items}}
+            \\ </ol>
+        ;
+        const ul_li_tmpl =
+            \\      <li>
+            \\          <span class="bullet {{variant}}-bullet"></span>
+            \\          <span>{{content}}</span>
+            \\      </li>
+        ;
+        const ol_li_tmpl =
+            \\     <li>
+            \\         <span class="number {{variant}}-number">{{number}}</span>
+            \\         <span>{{content}}</span>
+            \\     </li>
+        ;
+        var acc: ArrayList(u8) = .empty;
+        std.log.err("generating list... {any}", .{list.kind});
+        for (list.items.items, 0..) |item, i| {
+            switch (item) {
+                .p => |text| {
+                    const html = try TemplateManager.replacePlaceholders(
+                        self.gpa,
+                        switch (list.kind) {
+                            .ordered => ol_li_tmpl,
+                            .unordered => ul_li_tmpl,
+                        },
+                        &[_][]const u8{ "{{variant}}", "{{number}}", "{{content}}" },
+                        &[_][]const u8{ switch (list.depth) {
+                            0 => "primary",
+                            1 => "secondary",
+                            else => "accent",
+                        }, try std.fmt.allocPrint(self.gpa, "{d}", .{i + 1}), text },
+                    );
+                    try acc.appendSlice(self.gpa, html);
+                },
+                .list => |sublist| {
+                    const html = try self.generateList(sublist);
+                    try acc.appendSlice(self.gpa, html);
+                },
+            }
+        }
+        const html = try TemplateManager.replacePlaceholders(
+            self.gpa,
+            switch (list.kind) {
+                .ordered => ol_tmpl,
+                .unordered => ul_tmpl,
+            },
+            &[_][]const u8{ "{{variant}}", "{{items}}", "{{depth}}" },
+            &[_][]const u8{
+                switch (list.depth) {
+                    0 => "normal",
+                    else => "nested",
+                },
+                try acc.toOwnedSlice(self.gpa),
+                switch (list.depth) {
+                    0 => "1",
+                    1 => "2",
+                    else => "3",
+                },
+            },
+        );
+        return html;
+    }
     fn generateDividerType(self: *@This(), dtype: Node.DividerType) ![]u8 {
         const final_html = try TemplateManager.replacePlaceholders(
             self.gpa,

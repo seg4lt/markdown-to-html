@@ -32,6 +32,20 @@ pub const Node = union(enum) {
     magic_marker: MagicMarker,
     block_quote: Blockquote,
     divider: DividerType,
+    list: *List,
+
+    pub const ListKind = enum { ordered, unordered };
+    pub const List = struct {
+        kind: ListKind,
+        depth: usize,
+        items: ArrayList(ListItemKind),
+
+        pub const empty: @This() = .{ .kind = .unordered, .depth = 0, .items = .empty };
+    };
+    pub const ListItemKind = union(enum) {
+        p: []const u8,
+        list: *List,
+    };
 
     pub const DividerType = enum { normal, dashed, dotted };
 

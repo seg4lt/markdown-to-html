@@ -346,7 +346,6 @@ h6 {
     border-color: var(--error-primary-color);
 }
 
-
 /* ============================================
    TEXT FORMATTING
    ============================================ */
@@ -387,19 +386,174 @@ mark.caution-mark {
    HORIZONTAL RULES
    ============================================ */
 .divider {
-  border: none;
-  border-top: 4px solid var(--text-foreground);
-  margin: 16px 0;
+    border: none;
+    border-top: 4px solid var(--text-foreground);
+    margin: 16px 0;
 }
 
 .divider.dashed {
-  border-top-style: dashed;
-  border-color: var(--primary-color);
+    border-top-style: dashed;
+    border-color: var(--primary-color);
 }
 
 .divider.dotted {
-  border-top-style: dotted;
-  border-color: var(--primary-color-accent);
+    border-top-style: dotted;
+    border-color: var(--primary-color-accent);
 }
 
+/* ============================================
+   LISTS - ORDERED
+   ============================================ */
+.normal-ordered-list {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
 
+.normal-ordered-list li {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+}
+
+.normal-ordered-list li > span:last-child,
+.normal-ordered-list li > div {
+    line-height: 1.6;
+}
+
+.number {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    flex-shrink: 0;
+    border: 2px solid oklch(0.98 0 0);
+    font-weight: 900;
+    font-size: 0.875rem;
+}
+
+.primary-number {
+    background-color: oklch(0.75 0.19 142);
+    color: oklch(0.12 0 0);
+}
+
+.secondary-number {
+    background-color: oklch(0.82 0.15 85);
+    color: oklch(0.12 0 0);
+}
+
+.accent-number {
+    background-color: oklch(0.78 0.2 50);
+    color: oklch(0.12 0 0);
+}
+
+.nested-order-list-depth-1 {
+    margin-left: 24px;
+    margin-top: 8px;
+}
+.nested-order-list-depth-2 {
+    margin-left: 48px;
+    margin-top: 8px;
+}
+
+.nested-order-list-depth-3 {
+    margin-left: 72px;
+    margin-top: 8px;
+}
+
+.nested-ordered-list {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.nested-ordered-list li {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+}
+
+.number-small {
+    width: 20px;
+    height: 20px;
+    font-size: 0.75rem;
+}
+
+/* ============================================
+   LISTS - UNORDERED
+   ============================================ */
+.normal-unordered-list {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.normal-unordered-list li {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+}
+
+.normal-unordered-list li > span:last-child,
+.normal-unordered-list li > div {
+    line-height: 1.6;
+}
+
+.bullet {
+    display: block;
+    width: 12px;
+    height: 12px;
+    flex-shrink: 0;
+    margin-top: 4px;
+    border: 2px solid oklch(0.98 0 0);
+}
+
+.primary-bullet {
+    background-color: oklch(0.75 0.19 142);
+}
+
+.secondary-bullet {
+    background-color: oklch(0.82 0.15 85);
+}
+
+.accent-bullet {
+    background-color: oklch(0.78 0.2 50);
+}
+
+.nested-unordered-list-depth-1 {
+    margin-left: 24px;
+    margin-top: 8px;
+}
+.nested-unordered-list-depth-2 {
+    margin-left: 48px;
+    margin-top: 8px;
+}
+
+.nested-unordered-list-depth-3 {
+    margin-left: 72px;
+    margin-top: 8px;
+}
+
+.nested-unordered-list {
+    list-style: none;
+    margin-left: 24px;
+    margin-top: 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.nested-unordered-list li {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+}
+
+.bullet-small {
+    width: 8px;
+    height: 8px;
+}
