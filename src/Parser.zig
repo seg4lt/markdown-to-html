@@ -110,7 +110,7 @@ const Parser = struct {
             try self.parseDivider();
             return;
         }
-        if (isList(self.tokenizer.peekLine())) {
+        if (isList(self.tokenizer.peekLine()) != null) {
             try self.parseList();
             return;
         }
@@ -118,10 +118,11 @@ const Parser = struct {
         try self.parseParagraph();
     }
 
-    fn isList(line: []const u8) bool {
-        if (isUnorderedList(line)) return true;
-        if (isOrderedList(line)) return true;
-        return false;
+    fn isList(line: []const u8) ?Node.ListKind {
+        if (isTodoList(line)) return .todo;
+        if (isUnorderedList(line)) return .unordered;
+        if (isOrderedList(line)) return .ordered;
+        return null;
     }
 
     fn parseList(self: *@This()) !void {
@@ -133,11 +134,11 @@ const Parser = struct {
         const list = try self.gpa.create(Node.List);
         list.* = .empty;
         list.depth = depth;
-        if (isOrderedList(self.tokenizer.peekLine())) list.kind = .ordered;
+        list.kind = if (isList(self.tokenizer.peekLine())) |kind| kind else return ParseError.InvalidList;
 
         while (!self.tokenizer.isAtEnd()) {
             const peeked_line = self.tokenizer.peekLine();
-            if (!isList(peeked_line)) {
+            if (isList(peeked_line) == null) {
                 break;
             }
             const current_indent = getIndent(peeked_line);
@@ -150,7 +151,31 @@ const Parser = struct {
                 return list;
             }
             const line = self.tokenizer.consumeLine();
-            try list.items.append(self.gpa, .{ .p = try self.gpa.dupe(u8, line) });
+            const trimmed = std.mem.trim(u8, line, " \t\r");
+
+            if (list.kind == .todo) {
+                const checked = mem.startsWith(u8, trimmed, "- [x] ") or mem.startsWith(u8, trimmed, "- [X] ");
+                const content_start = 6;
+                const content = std.mem.trim(u8, trimmed[content_start..], " \t\r");
+                try list.items.append(self.gpa, .{
+                    .todo_item = .{
+                        .checked = checked,
+                        .content = try self.gpa.dupe(u8, content),
+                    },
+                });
+            } else {
+                const content_start = blk: {
+                    if (list.kind == .ordered) {
+                        var i: usize = 0;
+                        while (i < trimmed.len and std.ascii.isDigit(trimmed[i])) : (i += 1) {}
+                        // after skipping number we skip ". "
+                        break :blk i + 2;
+                    }
+                    // symbol and a space
+                    break :blk 2;
+                };
+                try list.items.append(self.gpa, .{ .p = try self.gpa.dupe(u8, trimmed[content_start..]) });
+            }
         }
 
         return list;
@@ -165,6 +190,12 @@ const Parser = struct {
             }
         }
         return count;
+    }
+
+    fn isTodoList(line: []const u8) bool {
+        const trimmed = std.mem.trim(u8, line, " \t\r");
+        if (mem.startsWith(u8, trimmed, "- [ ] ") or mem.startsWith(u8, trimmed, "- [x] ") or mem.startsWith(u8, trimmed, "- [X] ")) return true;
+        return false;
     }
 
     fn isUnorderedList(line: []const u8) bool {

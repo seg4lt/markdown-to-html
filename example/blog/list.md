@@ -32,3 +32,12 @@ Simple unordered list:
     - Subitem A
     - Subitem B
   2. Second mixed item
+  
+- [ ] Task list example:
+- [x] Completed task
+- [ ] Incomplete task
+
+## Nested
+- [ ] Task list example:
+  - [x] Completed task
+  - [ ] Incomplete task

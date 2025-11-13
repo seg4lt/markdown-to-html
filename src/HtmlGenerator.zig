@@ -125,15 +125,26 @@ const HtmlGenerator = struct {
         try self.accumulator.writer.flush();
     }
     fn generateList(self: *@This(), list: *Node.List) ![]u8 {
+        const task_list_tmpl =
+            \\ <ul class="{{variant}}-task-list {{variant}}-unordered-list-depth-{{depth}}">
+            \\     {{items}}
+            \\ </ul>
+        ;
         const ul_tmpl =
-            \\ <ul class="{{variant}}-unordered-list {{variant}}-order-list-depth-{{depth}}">
+            \\ <ul class="{{variant}}-unordered-list {{variant}}-unordered-list-depth-{{depth}}">
             \\   {{items}}
             \\ </ul>
         ;
         const ol_tmpl =
-            \\ <ol class="{{variant}}-ordered-list {{variant}}-order-list-depth-{{depth}}">
+            \\ <ol class="{{variant}}-ordered-list {{variant}}-ordered-list-depth-{{depth}}">
             \\   {{items}}
             \\ </ol>
+        ;
+        const todo_li_tmpl =
+            \\ <li>
+            \\     <span class="checkbox {{variant}}"></span>
+            \\     <span>{{content}}</span>
+            \\ </li>
         ;
         const ul_li_tmpl =
             \\      <li>
@@ -148,22 +159,45 @@ const HtmlGenerator = struct {
             \\     </li>
         ;
         var acc: ArrayList(u8) = .empty;
-        std.log.err("generating list... {any}", .{list.kind});
         for (list.items.items, 0..) |item, i| {
             switch (item) {
+                .todo_item => |todo_item| {
+                    const html = try TemplateManager.replacePlaceholders(
+                        self.gpa,
+                        task_list_tmpl,
+                        &[_][]const u8{"{{items}}"},
+                        &[_][]const u8{
+                            try TemplateManager.replacePlaceholders(
+                                self.gpa,
+                                todo_li_tmpl,
+                                &[_][]const u8{ "{{variant}}", "{{content}}" },
+                                &[_][]const u8{
+                                    if (todo_item.checked) "checked" else "unchecked",
+                                    todo_item.content,
+                                },
+                            ),
+                        },
+                    );
+                    try acc.appendSlice(self.gpa, html);
+                },
                 .p => |text| {
                     const html = try TemplateManager.replacePlaceholders(
                         self.gpa,
                         switch (list.kind) {
                             .ordered => ol_li_tmpl,
                             .unordered => ul_li_tmpl,
+                            .todo => todo_li_tmpl,
                         },
                         &[_][]const u8{ "{{variant}}", "{{number}}", "{{content}}" },
-                        &[_][]const u8{ switch (list.depth) {
-                            0 => "primary",
-                            1 => "secondary",
-                            else => "accent",
-                        }, try std.fmt.allocPrint(self.gpa, "{d}", .{i + 1}), text },
+                        &[_][]const u8{
+                            switch (list.depth) {
+                                0 => "primary",
+                                1 => "secondary",
+                                else => "accent",
+                            },
+                            try std.fmt.allocPrint(self.gpa, "{d}", .{i + 1}),
+                            text,
+                        },
                     );
                     try acc.appendSlice(self.gpa, html);
                 },
@@ -178,6 +212,7 @@ const HtmlGenerator = struct {
             switch (list.kind) {
                 .ordered => ol_tmpl,
                 .unordered => ul_tmpl,
+                .todo => task_list_tmpl,
             },
             &[_][]const u8{ "{{variant}}", "{{items}}", "{{depth}}" },
             &[_][]const u8{
@@ -376,6 +411,8 @@ const MarkdownInlineStyler = struct {
 
     fn run(self: *@This()) ![]u8 {
         while (!self.isAtEnd()) {
+            // these have to be more or less on this order
+            // not all of them, but image definitely has to come first, same for todo (i think)
             if (try self.processImage()) continue;
             if (try self.processLink()) continue;
             if (try self.processInlineCode()) continue;

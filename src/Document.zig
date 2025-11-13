@@ -34,7 +34,7 @@ pub const Node = union(enum) {
     divider: DividerType,
     list: *List,
 
-    pub const ListKind = enum { ordered, unordered };
+    pub const ListKind = enum { ordered, unordered, todo };
     pub const List = struct {
         kind: ListKind,
         depth: usize,
@@ -44,6 +44,10 @@ pub const Node = union(enum) {
     };
     pub const ListItemKind = union(enum) {
         p: []const u8,
+        todo_item: struct {
+            checked: bool,
+            content: []const u8,
+        },
         list: *List,
     };
 
