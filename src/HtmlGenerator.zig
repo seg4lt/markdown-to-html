@@ -107,17 +107,24 @@ const HtmlGenerator = struct {
     }
 
     fn generateNode(self: *@This(), node: Node) !void {
-        const final_html = switch (node) {
+        const almost_final_html = switch (node) {
             .h1, .h2, .h3, .h4 => try self.generateHeading(node),
             .p => |text| try self.generateParagraph(text),
             .code => |code_block| try self.generateCodeBlock(code_block),
             .magic_marker => |marker| try self.generateMagicMarker(marker),
             .block_quote => |bq| try self.generateBlockquote(bq),
         };
+        defer self.gpa.free(almost_final_html);
+        std.log.debug("{s}", .{self.document.file_name});
+        std.log.debug("{s}", .{almost_final_html});
+
+        const final_html = try MarkdownInlineStyler.apply(self.gpa, almost_final_html, self.template_manager);
         defer self.gpa.free(final_html);
+
         try self.accumulator.writer.print("\n{s}\n", .{final_html});
         try self.accumulator.writer.flush();
     }
+
     fn generateBlockquote(self: *@This(), bq: Node.Blockquote) ![]u8 {
         var iter = std.mem.splitAny(u8, bq.content, "\n");
         var acc: ArrayList(u8) = .empty;
@@ -146,15 +153,20 @@ const HtmlGenerator = struct {
         if (mem.eql(u8, marker.name, tmpl.MAGIC_BLOG_SERIES_TOC)) {
             return try self.generateBlogSeriesTableOfContent(marker);
         }
+        if (mem.eql(u8, marker.name, tmpl.MAGIC_GRID_START)) {
+            const html = try TemplateManager.replacePlaceholders(
+                self.gpa,
+                try self.template_manager.get(tmpl.TMPL_GRID_START.name),
+                &[_][]const u8{"{{count}}"},
+                &[_][]const u8{marker.args.?},
+            );
+            return html;
+        }
+        if (mem.eql(u8, marker.name, tmpl.MAGIC_GRID_END)) {
+            return self.gpa.dupe(u8, try self.template_manager.get(tmpl.TMPL_GRID_END.name));
+        }
         std.log.err("unknown magic marker -- `{s}`", .{marker.name});
         return Error.UnknownMagicMarker;
-
-        // if (marker.data) |data| {
-        //     std.log.debug(">>>> {any}", .{data.value});
-        // } else {
-        //     std.log.debug(">>>> null", .{});
-        // }
-        // @panic("... not implemented ...");
     }
     fn generateBlogSeriesTableOfContent(self: *@This(), marker: Node.MagicMarker) ![]u8 {
         _ = marker;
@@ -229,6 +241,11 @@ const HtmlGenerator = struct {
     }
 
     fn generateParagraph(self: *@This(), p_content: []const u8) ![]u8 {
+        if (p_content.len == 0) return "";
+        
+        // image already handled in inline styler
+        if (p_content[0] == '!') return self.gpa.dupe(u8, p_content);
+        
         return std.fmt.allocPrint(self.gpa,
             \\ <p>{s}</p>
         , .{p_content});
@@ -252,6 +269,104 @@ const HtmlGenerator = struct {
             }, text },
         );
         return final_html;
+    }
+};
+
+const MarkdownInlineStyler = struct {
+    source: []const u8,
+    pos: usize,
+    acc: ArrayList(u8),
+    tm: *TemplateManager,
+    allocator: Allocator,
+
+    pub fn apply(allocator: Allocator, source: []const u8, tm: *TemplateManager) ![]u8 {
+        var self: @This() = .{
+            .source = source,
+            .pos = 0,
+            .acc = .empty,
+            .tm = tm,
+            .allocator = allocator,
+        };
+        return self.run();
+    }
+
+    fn run(self: *@This()) ![]u8 {
+        while (!self.isAtEnd()) {
+            if (try self.processImage()) continue;
+            // if (try self.processLink()) continue;
+            // if (try self.processInlineCode()) continue;
+            // if (try self.processStrikethrough()) continue;
+            // if (try self.processBold()) continue;
+            // if (try self.processItalic()) continue;
+
+            // Regular character
+            try self.acc.append(self.allocator, self.source[self.pos]);
+            self.advance(1);
+        }
+        return try self.acc.toOwnedSlice(self.allocator);
+    }
+    fn processImage(self: *@This()) !bool {
+        // ![alt text](image_url)
+        if (!self.isImage()) return false;
+        const original_start = self.pos;
+
+        self.advance(2); // ![
+        const alt_text_pos_start = self.pos;
+        while (self.peek() != ']' and !self.isAtEnd()) {
+            self.advance(1);
+        }
+        const alt_text = self.source[alt_text_pos_start..self.pos];
+        self.advance(1); // ]
+
+        if (self.peek() != '(') {
+            std.log.err("invalid image syntax found", .{});
+            try self.acc.appendSlice(self.allocator, self.source[original_start..self.pos]);
+            return true;
+        }
+        self.advance(1); // (
+
+        const url_pos_start = self.pos;
+        while (self.peek() != ')' and !self.isAtEnd()) {
+            self.advance(1);
+        }
+        const url = self.source[url_pos_start..self.pos];
+        self.advance(1); // )
+
+        const img_html = try std.fmt.allocPrint(self.allocator, "<img src=\"{s}\" alt=\"{s}\">", .{ url, alt_text });
+
+        const image_card = try TemplateManager.replacePlaceholders(
+            self.allocator,
+            try self.tm.get(tmpl.TMPL_CARD.name),
+            &[_][]const u8{ "{{title}}", "{{variant}}", "{{content}}" },
+            &[_][]const u8{ alt_text, "primary", img_html },
+        );
+
+        try self.acc.appendSlice(self.allocator, image_card);
+        return true;
+    }
+
+    fn isImage(self: *@This()) bool {
+        if (self.peek() != '!') return false;
+        if (self.peekAhead(1) != '[') return false;
+        return true;
+    }
+
+    fn advance(self: *@This(), count: usize) void {
+        self.pos += count;
+    }
+
+    fn isAtEnd(self: *@This()) bool {
+        return self.pos >= self.source.len;
+    }
+
+    fn peek(self: *@This()) ?u8 {
+        return self.peekAhead(0);
+    }
+
+    fn peekAhead(self: *@This(), offset: usize) ?u8 {
+        const idx = self.pos + offset;
+        if (idx >= self.source.len) return null;
+        return self.source[idx];
     }
 };
 

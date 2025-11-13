@@ -253,6 +253,10 @@ const Parser = struct {
 
             if (self.isHeading()) break;
             if (self.isCodeBlock()) break;
+            if (self.isMagicMarker()) break;
+            if (self.isBlockquote()) break;
+            if (mem.trim(u8, self.tokenizer.peekLine(), " \t\r").len == 0) break;
+            try acc.appendSlice(self.gpa, " ");
         }
         const node: Node = .{ .p = try acc.toOwnedSlice(self.gpa) };
         try self.nodes.append(self.gpa, node);

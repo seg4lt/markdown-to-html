@@ -4,6 +4,8 @@ pub const MAGIC_INCLUDE_HTML_DATA = "```@@include_html_data";
 pub const MAGIC_BLOG_LIST = "@@blog_list";
 pub const MAGIC_BLOG_SERIES_TOC = "@@blog_series_toc";
 pub const MAGIC_FRONTMATTER = "@@frontmatter";
+pub const MAGIC_GRID_START = "@@grid_start";
+pub const MAGIC_GRID_END = "@@grid_end";
 
 pub const Template = struct { name: []const u8, content: []const u8 };
 
@@ -20,6 +22,10 @@ pub const TMPL_TEXT_LINK_ALT: Template = .{ .name = "text_link_alt.html", .conte
 pub const TMPL_BUTTON_LINK: Template = .{ .name = "button_link.html", .content = DEFAULT_BUTTON_LINK_HTML };
 pub const TMPL_CARD: Template = .{ .name = "card.html", .content = DEFAULT_CARD_HTML };
 pub const TMPL_BLOCK_QUOTE: Template = .{ .name = "block_quote.html", .content = DEFAULT_BLOCK_QUOTE_HTML };
+
+pub const TMPL_GRID_START: Template = .{ .name = "grid_start.html", .content = DEFAULT_GRID_START_HTML };
+pub const TMPL_GRID_END: Template = .{ .name = "grid_end.html", .content = DEFAULT_GRID_END_HTML };
+
 pub const TMPL_STYLES_CSS: Template = .{ .name = "styles.css", .content = DEFAULT_STYLES };
 
 pub const TEMPLATES = [_]Template{
@@ -152,6 +158,12 @@ pub const DEFAULT_BUTTON_LINK_HTML =
 ;
 const DEFAULT_BLOCK_QUOTE_HTML =
     \\ <blockquote class="quote {{variant}}-quote">{{content}}</blockquote>
+;
+const DEFAULT_GRID_START_HTML =
+    \\ <div class="grid grid-{{count}}">
+;
+const DEFAULT_GRID_END_HTML =
+    \\ </div>
 ;
 
 pub const CardType = enum { primary, accent, secondary };
