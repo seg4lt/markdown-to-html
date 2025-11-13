@@ -31,6 +31,9 @@ pub const Node = union(enum) {
     code: CodeBlock,
     magic_marker: MagicMarker,
     block_quote: Blockquote,
+    divider: DividerType,
+
+    pub const DividerType = enum { normal, dashed, dotted };
 
     pub const Blockquote = struct {
         kind: Kind,

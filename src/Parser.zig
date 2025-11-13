@@ -106,7 +106,32 @@ const Parser = struct {
             return;
         }
 
+        if (self.isDivider()) {
+            try self.parseDivider();
+            return;
+        }
+
         try self.parseParagraph();
+    }
+
+    fn isDivider(self: *@This()) bool {
+        const line = self.tokenizer.peekLine();
+        const trimmed = std.mem.trim(u8, line, " \t\r");
+        return mem.eql(u8, trimmed, "---") or mem.eql(u8, trimmed, "***") or mem.eql(u8, trimmed, "___");
+    }
+    fn parseDivider(self: *@This()) ParseError!void {
+        const line = self.tokenizer.consumeLine();
+        const trimmed = std.mem.trim(u8, line, " \t\r");
+        var divider_type: Node.DividerType = .normal;
+        if (mem.eql(u8, trimmed, "---")) {
+            divider_type = .dashed;
+        } else if (mem.eql(u8, trimmed, "***")) {
+            divider_type = .dotted;
+        } else if (mem.eql(u8, trimmed, "___")) {
+            divider_type = .normal;
+        }
+        const node: Node = .{ .divider = divider_type };
+        try self.nodes.append(self.gpa, node);
     }
 
     fn isBlockquote(self: *@This()) bool {
@@ -145,7 +170,7 @@ const Parser = struct {
                 kind = .caution;
                 continue;
             }
-            
+
             first_line = false;
             const content = std.mem.trim(u8, line[2..], " \t\r");
             try acc.appendSlice(self.gpa, content);

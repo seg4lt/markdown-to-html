@@ -382,3 +382,24 @@ mark.warning-mark {
 mark.caution-mark {
     background-color: var(--error-primary-color);
 }
+
+/* ============================================
+   HORIZONTAL RULES
+   ============================================ */
+.divider {
+  border: none;
+  border-top: 4px solid var(--text-foreground);
+  margin: 16px 0;
+}
+
+.divider.dashed {
+  border-top-style: dashed;
+  border-color: var(--primary-color);
+}
+
+.divider.dotted {
+  border-top-style: dotted;
+  border-color: var(--primary-color-accent);
+}
+
+

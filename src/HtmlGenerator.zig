@@ -113,6 +113,7 @@ const HtmlGenerator = struct {
             .code => |code_block| try self.generateCodeBlock(code_block),
             .magic_marker => |marker| try self.generateMagicMarker(marker),
             .block_quote => |bq| try self.generateBlockquote(bq),
+            .divider => |dtype| try self.generateDividerType(dtype),
         };
         defer self.gpa.free(almost_final_html);
 
@@ -121,6 +122,20 @@ const HtmlGenerator = struct {
 
         try self.accumulator.writer.print("\n{s}\n", .{final_html});
         try self.accumulator.writer.flush();
+    }
+
+    fn generateDividerType(self: *@This(), dtype: Node.DividerType) ![]u8 {
+        const final_html = try TemplateManager.replacePlaceholders(
+            self.gpa,
+            "<hr class=\"divider {{variant}}\">",
+            &[_][]const u8{"{{variant}}"},
+            &[_][]const u8{switch (dtype) {
+                .normal => "solid",
+                .dashed => "dashed",
+                .dotted => "dotted",
+            }},
+        );
+        return final_html;
     }
 
     fn generateBlockquote(self: *@This(), bq: Node.Blockquote) ![]u8 {

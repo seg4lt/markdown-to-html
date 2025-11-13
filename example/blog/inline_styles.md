@@ -26,17 +26,25 @@ This is an example of an image in markdown:
 {{ @@grid_end }}
 
 This is an example of a horizontal rule in markdown:
+
 ---
 
 This is an example of highlighted text in markdown: ==highlighted text==.
+
 
 this is highlight with different color syntax:
 
 ==highlighted text with different color===primary=.
 
+---
+
 ==highlighted text with different color===note=.
 
+***
+
 ==highlighted text with different color===tip=.
+
+___
 
 ==highlighted text with different color===important=.
 
