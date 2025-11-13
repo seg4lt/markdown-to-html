@@ -29,7 +29,12 @@ body {
 }
 
 code {
-    font-family: "Cascadia Code";
+    font-family: "Cascadia Code", monospace;
+    border-radius: 4px;
+    border: 2px solid oklch(0.98 0 0);
+    background-color: oklch(0.25 0 0);
+    padding: 2px 8px;
+    font-size: 0.875rem;
 }
 
 img {
@@ -122,7 +127,7 @@ img {
     .grid.grid-2 {
         grid-template-columns: repeat(2, 1fr);
     }
-    
+
     .grid.grid-1 {
         grid-template-columns: repeat(1, 1fr);
     }

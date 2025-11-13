@@ -14,6 +14,10 @@ This is an example of ~~strikethrough text~~ in markdown.
 
 This is an example of `inline code` in markdown.
 
+Another example of inline `<h1>hello world</h1>` code in markdown.
+
+One more `<script>alert('Hello!')</script>` example of inline code in markdown.
+
 This is an example of a [link](https://www.example.com) in markdown.
 
 This is an example of an image in markdown:

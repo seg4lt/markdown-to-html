@@ -115,8 +115,6 @@ const HtmlGenerator = struct {
             .block_quote => |bq| try self.generateBlockquote(bq),
         };
         defer self.gpa.free(almost_final_html);
-        std.log.debug("{s}", .{self.document.file_name});
-        std.log.debug("{s}", .{almost_final_html});
 
         const final_html = try MarkdownInlineStyler.apply(self.gpa, almost_final_html, self.template_manager);
         defer self.gpa.free(final_html);
@@ -242,10 +240,10 @@ const HtmlGenerator = struct {
 
     fn generateParagraph(self: *@This(), p_content: []const u8) ![]u8 {
         if (p_content.len == 0) return "";
-        
+
         // image already handled in inline styler
         if (p_content[0] == '!') return self.gpa.dupe(u8, p_content);
-        
+
         return std.fmt.allocPrint(self.gpa,
             \\ <p>{s}</p>
         , .{p_content});
@@ -293,8 +291,8 @@ const MarkdownInlineStyler = struct {
     fn run(self: *@This()) ![]u8 {
         while (!self.isAtEnd()) {
             if (try self.processImage()) continue;
-            // if (try self.processLink()) continue;
-            // if (try self.processInlineCode()) continue;
+            if (try self.processLink()) continue;
+            if (try self.processInlineCode()) continue;
             // if (try self.processStrikethrough()) continue;
             // if (try self.processBold()) continue;
             // if (try self.processItalic()) continue;
@@ -305,6 +303,74 @@ const MarkdownInlineStyler = struct {
         }
         return try self.acc.toOwnedSlice(self.allocator);
     }
+    fn processInlineCode(self: *@This()) !bool {
+        // `code`
+        if (self.peek() != '`') return false;
+
+        self.advance(1); // `
+
+        const code_pos_start = self.pos;
+        while (self.peek() != '`' and !self.isAtEnd()) {
+            self.advance(1);
+        }
+        const code_text = try self.allocator.dupe(u8, self.source[code_pos_start..self.pos]);
+        self.advance(1); // `
+
+        const escaped_code_text = try escapeHtml(self.allocator, code_text);
+
+        const code_html = try std.fmt.allocPrint(self.allocator, "<code class=\"inline-code\">{s}</code>", .{escaped_code_text});
+        try self.acc.appendSlice(self.allocator, code_html);
+        return true;
+    }
+
+    fn escapeHtml(allocator: std.mem.Allocator, text: []const u8) ![]u8 {
+        var result: ArrayList(u8) = .empty;
+        for (text) |ch| {
+            switch (ch) {
+                '<' => try result.appendSlice(allocator, "&lt;"),
+                '>' => try result.appendSlice(allocator, "&gt;"),
+                '&' => try result.appendSlice(allocator, "&amp;"),
+                '"' => try result.appendSlice(allocator, "&quot;"),
+                '\'' => try result.appendSlice(allocator, "&#39;"),
+                else => try result.append(allocator, ch),
+            }
+        }
+        return result.toOwnedSlice(allocator);
+    }
+
+    fn processLink(self: *@This()) !bool {
+        // [text](url)
+        if (self.peek() != '[') return false;
+
+        const original_start = self.pos;
+
+        self.advance(1); // [
+        const text_pos_start = self.pos;
+        while (self.peek() != ']' and !self.isAtEnd()) {
+            self.advance(1);
+        }
+        const link_text = self.source[text_pos_start..self.pos];
+        self.advance(1); // ]
+
+        if (self.peek() != '(') {
+            std.log.err("invalid link syntax found", .{});
+            try self.acc.appendSlice(self.allocator, self.source[original_start..self.pos]);
+            return true;
+        }
+        self.advance(1); // (
+
+        const url_pos_start = self.pos;
+        while (self.peek() != ')' and !self.isAtEnd()) {
+            self.advance(1);
+        }
+        const url = self.source[url_pos_start..self.pos];
+        self.advance(1); // )
+
+        const link_html = try std.fmt.allocPrint(self.allocator, "<a href=\"{s}\" class=\"text-link\">{s}</a>", .{ url, link_text });
+        try self.acc.appendSlice(self.allocator, link_html);
+        return true;
+    }
+
     fn processImage(self: *@This()) !bool {
         // ![alt text](image_url)
         if (!self.isImage()) return false;
