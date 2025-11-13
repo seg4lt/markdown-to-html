@@ -345,3 +345,40 @@ h6 {
 .caution-quote {
     border-color: var(--error-primary-color);
 }
+
+
+/* ============================================
+   TEXT FORMATTING
+   ============================================ */
+strong {
+    font-weight: 900;
+}
+
+em {
+    font-style: italic;
+}
+
+del {
+    text-decoration: line-through;
+}
+
+mark {
+    background-color: var(--secondary-color);
+    color: var(--bg-background);
+    padding: 0 4px;
+}
+mark.note-mark {
+    background-color: var(--primary-color-accent);
+}
+mark.tip-mark {
+    background-color: var(--ternary-color);
+}
+mark.important-mark {
+    background-color: var(--nav-primary-color);
+}
+mark.warning-mark {
+    background-color: var(--secondary-color);
+}
+mark.caution-mark {
+    background-color: var(--error-primary-color);
+}

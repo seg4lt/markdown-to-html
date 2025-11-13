@@ -30,6 +30,20 @@ This is an example of a horizontal rule in markdown:
 
 This is an example of highlighted text in markdown: ==highlighted text==.
 
+this is highlight with different color syntax:
+
+==highlighted text with different color===primary=.
+
+==highlighted text with different color===note=.
+
+==highlighted text with different color===tip=.
+
+==highlighted text with different color===important=.
+
+==highlighted text with different color===warning=.
+
+==highlighted text with different color===caution=.
+
 This is an example of bold and itallic text in markdown: ***bold and italic text***.
 
 

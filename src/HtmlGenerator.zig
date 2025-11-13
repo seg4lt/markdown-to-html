@@ -293,9 +293,11 @@ const MarkdownInlineStyler = struct {
             if (try self.processImage()) continue;
             if (try self.processLink()) continue;
             if (try self.processInlineCode()) continue;
-            // if (try self.processStrikethrough()) continue;
-            // if (try self.processBold()) continue;
-            // if (try self.processItalic()) continue;
+            if (try self.processStrikethrough()) continue;
+            if (try self.processBoldAndItalic()) continue;
+            if (try self.processBold()) continue;
+            if (try self.processItalic()) continue;
+            if (try self.processHighlight()) continue;
 
             // Regular character
             try self.acc.append(self.allocator, self.source[self.pos]);
@@ -303,6 +305,117 @@ const MarkdownInlineStyler = struct {
         }
         return try self.acc.toOwnedSlice(self.allocator);
     }
+
+    fn processHighlight(self: *@This()) !bool {
+        // ==text==
+        if (self.peek() != '=' or self.peekAhead(1) != '=') return false;
+
+        self.advance(2); // ==
+
+        const text_pos_start = self.pos;
+        while (!(self.peek() == '=' and self.peekAhead(1) == '=') and !self.isAtEnd()) {
+            self.advance(1);
+        }
+        const highlight_text = self.source[text_pos_start..self.pos];
+
+        self.advance(2); // ==
+        // this is custom feature I added
+        // ==highlighted text with different color===primary=.
+        // note-mark // tip-mark  // important-mark  // warning-mark  // caution-mark
+        var hl_type: []const u8 = "";
+        if (self.peek() == '=' and !self.isAtEnd()) {
+            self.advance(1);
+            const type_pos_start = self.pos;
+            while (self.peek() != '=' and !self.isAtEnd()) {
+                self.advance(1);
+            }
+            hl_type = self.source[type_pos_start..self.pos];
+        }
+        self.advance(1); // =
+
+        const highlight_html = try std.fmt.allocPrint(self.allocator, "<mark class=\"highlight {s}-mark\">{s}</mark>", .{ hl_type, highlight_text });
+        try self.acc.appendSlice(self.allocator, highlight_html);
+        return true;
+    }
+
+    fn processBoldAndItalic(self: *@This()) !bool {
+        // ***text*** or ___text___
+        const marker = self.peek();
+        if (marker != '*' and marker != '_') return false;
+        if (self.peekAhead(1) != marker) return false;
+        if (self.peekAhead(2) != marker) return false;
+
+        self.advance(3); // *** or ___
+
+        const text_pos_start = self.pos;
+        while (!(self.peek() == marker and self.peekAhead(1) == marker and self.peekAhead(2) == marker) and !self.isAtEnd()) {
+            self.advance(1);
+        }
+        const bold_italic_text = self.source[text_pos_start..self.pos];
+        self.advance(3); // *** or ___
+
+        const bold_italic_html = try std.fmt.allocPrint(self.allocator, "<strong class=\"bold-italic\"><em class=\"italic\">{s}</em></strong>", .{bold_italic_text});
+        try self.acc.appendSlice(self.allocator, bold_italic_html);
+        return true;
+    }
+
+    fn processItalic(self: *@This()) !bool {
+        // *text* or _text_
+        const marker = self.peek();
+        if (marker != '*' and marker != '_') return false;
+
+        self.advance(1); // * or _
+
+        const text_pos_start = self.pos;
+        while (self.peek() != marker and !self.isAtEnd()) {
+            self.advance(1);
+        }
+        const italic_text = self.source[text_pos_start..self.pos];
+        self.advance(1); // * or _
+
+        const italic_html = try std.fmt.allocPrint(self.allocator, "<em class=\"italic\">{s}</em>", .{italic_text});
+        try self.acc.appendSlice(self.allocator, italic_html);
+        return true;
+    }
+
+    fn processBold(self: *@This()) !bool {
+        // **text** or __text__
+        const marker = self.peek();
+        if (marker != '*' and marker != '_') return false;
+        if (self.peekAhead(1) != marker) return false;
+
+        self.advance(2); // ** or __
+
+        const text_pos_start = self.pos;
+        while (!(self.peek() == marker and self.peekAhead(1) == marker) and !self.isAtEnd()) {
+            self.advance(1);
+        }
+        const bold_text = self.source[text_pos_start..self.pos];
+        self.advance(2); // ** or __
+
+        const bold_html = try std.fmt.allocPrint(self.allocator, "<strong class=\"bold\">{s}</strong>", .{bold_text});
+        try self.acc.appendSlice(self.allocator, bold_html);
+        return true;
+    }
+
+    fn processStrikethrough(self: *@This()) !bool {
+        // ~~text~~
+        if (self.peek() != '~' or self.peekAhead(1) != '~') return false;
+
+        self.advance(2); // ~~
+
+        const text_pos_start = self.pos;
+        while (!(self.peek() == '~' and self.peekAhead(1) == '~') and !self.isAtEnd()) {
+            self.advance(1);
+        }
+        const strike_text = self.source[text_pos_start..self.pos];
+        self.advance(2); // ~~
+
+        const strike_html = try std.fmt.allocPrint(self.allocator, "<del class=\"strikethrough\">{s}</del>", .{strike_text});
+        try self.acc.appendSlice(self.allocator, strike_html);
+        return true;
+    }
+
     fn processInlineCode(self: *@This()) !bool {
         // `code`
         if (self.peek() != '`') return false;
