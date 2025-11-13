@@ -162,26 +162,19 @@ const HtmlGenerator = struct {
         for (list.items.items, 0..) |item, i| {
             switch (item) {
                 .todo_item => |todo_item| {
-                    const html = try TemplateManager.replacePlaceholders(
+                    const item_html = try TemplateManager.replacePlaceholders(
                         self.gpa,
-                        task_list_tmpl,
-                        &[_][]const u8{"{{items}}"},
+                        todo_li_tmpl,
+                        &[_][]const u8{ "{{variant}}", "{{content}}" },
                         &[_][]const u8{
-                            try TemplateManager.replacePlaceholders(
-                                self.gpa,
-                                todo_li_tmpl,
-                                &[_][]const u8{ "{{variant}}", "{{content}}" },
-                                &[_][]const u8{
-                                    if (todo_item.checked) "checked" else "unchecked",
-                                    todo_item.content,
-                                },
-                            ),
+                            if (todo_item.checked) "checked" else "unchecked",
+                            todo_item.content,
                         },
                     );
-                    try acc.appendSlice(self.gpa, html);
+                    try acc.appendSlice(self.gpa, item_html);
                 },
                 .p => |text| {
-                    const html = try TemplateManager.replacePlaceholders(
+                    const item_html = try TemplateManager.replacePlaceholders(
                         self.gpa,
                         switch (list.kind) {
                             .ordered => ol_li_tmpl,
@@ -199,11 +192,11 @@ const HtmlGenerator = struct {
                             text,
                         },
                     );
-                    try acc.appendSlice(self.gpa, html);
+                    try acc.appendSlice(self.gpa, item_html);
                 },
                 .list => |sublist| {
-                    const html = try self.generateList(sublist);
-                    try acc.appendSlice(self.gpa, html);
+                    const item_html = try self.generateList(sublist);
+                    try acc.appendSlice(self.gpa, item_html);
                 },
             }
         }

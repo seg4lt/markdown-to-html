@@ -148,7 +148,7 @@ const Parser = struct {
                 continue;
             }
             if (current_indent < indent and current_indent > 0) {
-                return list;
+                break;
             }
             const line = self.tokenizer.consumeLine();
             const trimmed = std.mem.trim(u8, line, " \t\r");
