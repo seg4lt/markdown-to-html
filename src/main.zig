@@ -33,7 +33,7 @@ const Clap = struct {
     app_name: []const u8 = "m2h",
     app_subtitle: []const u8 = "Markdown to HTML generator written in Zig",
     base_path: []const u8 = "example",
-    output_path: []const u8 = "dist",
+    output_path: []const u8 = "docs",
     tmpl_path: []const u8 = "__templates",
     export_default_tmpl: bool = false,
 };

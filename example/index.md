@@ -131,6 +131,7 @@ Table of Contents
 Each item links to that post. Same folder = series. Thats it.
 
 ## TODO
+- [ ] relative path support
 - [ ] Sort blog content
 - [ ] @@blog_list to support number of blog
 - [ ] gen html should have date based folder structure

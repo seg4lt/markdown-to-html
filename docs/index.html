@@ -1,0 +1,324 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Example Markdown - Updated</title>
+        <link rel="stylesheet" href="/styles.css" />
+        <link
+            rel="stylesheet"
+            href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/styles/github-dark.min.css"
+        />
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+        <link
+            href="https://fonts.googleapis.com/css2?family=Cascadia+Code:ital,wght@0,200..700;1,200..700&display=swap"
+            rel="stylesheet"
+        />
+        <link
+            href="https://fonts.googleapis.com/css2?family=Geist+Mono:wght@400;700;900&display=swap"
+            rel="stylesheet"
+        />
+        <script
+            defer
+            src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/highlight.min.js"
+        ></script>
+    </head>
+    <body>
+        <div class="global-container">
+            <header class="main-header">
+                <h1 class="main-title">m2h</h1>
+                <p class="main-subtitle">Markdown to HTML generator written in Zig</p>
+                <nav class="main-nav">
+    <ul class="nav-links">
+        <li><a href="/" class="button-link">home</a>
+</li>
+
+<li><a href="/about" class="button-link">about</a>
+</li>
+
+<li><a href="/blog" class="button-link">blog</a>
+</li>
+
+<li><a href="/project" class="button-link">project</a>
+</li>
+
+    </ul>
+</nav>
+
+            </header>
+            <div class="main-content">
+<h1>m2h</h1>
+
+
+ <p>Markdown to HTML converter written in Zig. Very opinionated and supports only what I need.</p>
+
+<h2>Quick Start</h2>
+
+
+<pre class="code-block"><code class="language-bash">zig build
+./zig-out/bin/m2h
+</code></pre> 
+
+
+ <p>Generates HTML from markdown files in <code class="inline-code">example/</code> folder and outputs to <code class="inline-code">dist/</code></p>
+
+<h2>Command Line Flags</h2>
+
+
+<pre class="code-block"><code class="language-bash">./zig-out/bin/m2h --base_path=example --output_path=dist --tmpl_path=__templates
+</code></pre> 
+
+
+ <p>All flags are optional with these defaults:</p>
+
+<ul class="normal-unordered-list normal-unordered-list-depth-1">
+<li>
+<span class="bullet primary-bullet"></span>
+<span><code class="inline-code">--base_path</code> = <code class="inline-code">example</code> (where your markdown files are)</span>
+</li> 
+<li>
+<span class="bullet primary-bullet"></span>
+<span><code class="inline-code">--output_path</code> = <code class="inline-code">dist</code> (where HTML goes)</span>
+</li> 
+<li>
+<span class="bullet primary-bullet"></span>
+<span><code class="inline-code">--tmpl_path</code> = <code class="inline-code">__templates</code> (template folder name inside base<em class="italic">path)</em></span>
+</li> 
+<li>
+<span class="bullet primary-bullet"></span>
+<span><code class="inline-code">--app_name</code> = <code class="inline-code">m2h</code> (used in HTML title)</span>
+</li> 
+<li>
+<span class="bullet primary-bullet"></span>
+<span><code class="inline-code">--app_subtitle</code> = <code class="inline-code">Markdown to HTML generator written in Zig</code></span>
+</li> 
+<li>
+<span class="bullet primary-bullet"></span>
+<span><code class="inline-code">--export_default_tmpl</code> = <code class="inline-code">false</code> (exports default templates to see what's available)</span>
+</li> 
+
+</ul> 
+
+
+ <p>So basically it looks for markdown in <code class="inline-code">example/</code>, templates in <code class="inline-code">example/__templates/</code>, and outputs to <code class="inline-code">dist/</code>.</p>
+
+<h2>Folder Structre</h2>
+
+
+<pre class="code-block"><code>example/
+├── __templates/        # your custom templates go here
+│   ├── base.html
+│   ├── heading.html
+│   ├── styles.css
+│   └── ... other templates
+├── blog/              # markdown files
+│   └── post.md
+└── index.md
+</code></pre> 
+
+
+ <p>The generator walks through all <code class="inline-code">.md</code> files and converts them to HTML.</p>
+
+<h2>Override Templates & Styles</h2>
+
+
+ <p>Just drop your custom template in <code class="inline-code">example/__templates/</code> folder. The build script will automatically bake them into the binary.</p>
+
+ <p>Example - to change how headings look:</p>
+
+<pre class="code-block"><code class="language-html"><!-- __templates/heading.html -->
+<h{{level}} class="my-custom-class">{{content}}</h{{level}}>
+</code></pre> 
+
+
+ <p>Same for styles - edit <code class="inline-code">__templates/styles.css</code> and rebuild.</p>
+
+<h2>Magic Markers</h2>
+
+
+ <p>These are special markers you can use in markdown:</p>
+
+<h3>Blog List</h3>
+
+
+<pre class="code-block"><code class="language-markdown">{{ @@blog_list }}
+</code></pre> 
+
+
+ <p>Generates list of all blog posts with frontmatter like below</p>
+
+<section class="card">
+    <!-- variant == primary, accent, secondary -->
+    <div class="card-header primary-header">
+        <h2 class="card-title">Recent Blogs</h2>
+    </div>
+    <div class="card-content"><a href="/blog/test_series/test_series_01.html" class="blog-list-item-link button-link">
+    <div class="blog-list-item-title">Test Series 01</div>
+    <div class="blog-list-item-desc">This is the first test series markdown file.</div>
+    <div class="blog-list-item-date">2024-06-15</div>
+</a>
+
+<a href="/blog/test_series/test_series_02.html" class="blog-list-item-link button-link">
+    <div class="blog-list-item-title">Test Series 02</div>
+    <div class="blog-list-item-desc">This is the second test series markdown file.</div>
+    <div class="blog-list-item-date">2024-06-15</div>
+</a>
+
+<a href="/blog/inline_styles.html" class="blog-list-item-link button-link">
+    <div class="blog-list-item-title">Inline Style Examples</div>
+    <div class="blog-list-item-desc">Examples of different inline styles in markdown.</div>
+    <div class="blog-list-item-date">2024-06-15</div>
+</a>
+
+<a href="/blog/list.html" class="blog-list-item-link button-link">
+    <div class="blog-list-item-title">List Example</div>
+    <div class="blog-list-item-desc">List example in markdown.</div>
+    <div class="blog-list-item-date">2024-06-15</div>
+</a>
+
+<a href="/blog/block-quote.html" class="blog-list-item-link button-link">
+    <div class="blog-list-item-title">Block Quote Examples</div>
+    <div class="blog-list-item-desc">Examples of different block quote types in markdown.</div>
+    <div class="blog-list-item-date">2024-06-15</div>
+</a>
+
+<a href="/blog/index.html" class="blog-list-item-link button-link">
+    <div class="blog-list-item-title">Blog Page</div>
+    <div class="blog-list-item-desc">This is a blog page example.</div>
+    <div class="blog-list-item-date">2024-06-01</div>
+</a>
+
+</div>
+</section>
+
+
+<h3>Blog Series TOC</h3>
+
+
+<pre class="code-block"><code class="language-markdown">{{ @@blog_series_toc }}
+</code></pre> 
+
+
+ <p>Creates table of contents for blog series</p>
+
+<h3>Grid Layout</h3>
+
+
+<pre class="code-block"><code class="language-markdown">{{ @@grid_start 3 }}
+
+your content here...
+
+{{ @@grid_end }}
+</code></pre> 
+
+
+ <p>Creates responsive grid with 3 columns</p>
+
+<h2>Highlight with Colors</h2>
+
+
+ <p>Use <code class="inline-code">==text==</code> for highlights. You can add color variants:</p>
+
+<pre class="code-block"><code class="language-markdown">==normal highlight==
+==important text===important=
+==warning message===warning=
+==note to self===note=
+</code></pre> 
+
+
+ <p>The variant gets added as CSS class so you can style them however you want.</p>
+
+<h2>Blog Series</h2>
+
+
+ <p>Put related posts in same folder and use the magic marker:</p>
+
+<pre class="code-block"><code>example/blog/test_series/
+├── test_series_01.md
+└── test_series_02.md
+</code></pre> 
+
+
+ <p>In any of those files add:</p>
+
+<pre class="code-block"><code class="language-markdown">{{ @@blog_series_toc }}
+</code></pre> 
+
+
+ <p>Generates something like:</p>
+
+<pre class="code-block"><code>Table of Contents
+1. Test Series 01
+2. Test Series 02
+</code></pre> 
+
+
+ <p>Each item links to that post. Same folder = series. Thats it.</p>
+
+<h2>TODO</h2>
+
+
+<ul class="normal-task-list normal-unordered-list-depth-1">
+<li>
+<span class="checkbox unchecked"></span>
+<span>relative path support</span>
+</li>
+<li>
+<span class="checkbox unchecked"></span>
+<span>Sort blog content</span>
+</li>
+<li>
+<span class="checkbox unchecked"></span>
+<span>@@blog<em class="italic">list to support number of blog</em></span>
+</li>
+<li>
+<span class="checkbox unchecked"></span>
+<span>gen html should have date based folder structure</span>
+</li>
+<li>
+<span class="checkbox unchecked"></span>
+<span>Parse table</span>
+</li>
+<li>
+<span class="checkbox unchecked"></span>
+<span>fix table of content for table series</span>
+</li>
+<li>
+<span class="checkbox unchecked"></span>
+<span>fix sorting on table of content using index</span>
+</li>
+<li>
+<span class="checkbox unchecked"></span>
+<span>add support for @@include<em class="italic">html and @@include</em>html<em class="italic">data for some dynamism - so I don't need to create parser for each type of thing I want to support</em></span>
+</li>
+<li>
+<span class="checkbox unchecked"></span>
+<span>ol/ul list template on <code class="inline-code">__templates</code> folder so it can be picked up by build script</span>
+</li>
+<li>
+<span class="checkbox unchecked"></span>
+<span>For quick prototyping I was using gpa everywhere, and not cleaning up memory properly. Fix that !!</span>
+</li>
+
+</ul>
+
+</div>
+            <footer class="main-footer">
+                <div class="container">
+                    <p>
+                        &copy; <span id="this-year"></span> seg4lt. Markdown to
+                        html generator written in Zig
+                    </p>
+                </div>
+            </footer>
+            <script>
+                document.addEventListener("DOMContentLoaded", (event) => {
+                    document.getElementById("this-year").textContent =
+                        new Date().getFullYear();
+                    hljs.highlightAll();
+                });
+            </script>
+        </div>
+    </body>
+</html>

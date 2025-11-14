@@ -1,0 +1,123 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Inline Style Examples - Updated</title>
+        <link rel="stylesheet" href="/styles.css" />
+        <link
+            rel="stylesheet"
+            href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/styles/github-dark.min.css"
+        />
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+        <link
+            href="https://fonts.googleapis.com/css2?family=Cascadia+Code:ital,wght@0,200..700;1,200..700&display=swap"
+            rel="stylesheet"
+        />
+        <link
+            href="https://fonts.googleapis.com/css2?family=Geist+Mono:wght@400;700;900&display=swap"
+            rel="stylesheet"
+        />
+        <script
+            defer
+            src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/highlight.min.js"
+        ></script>
+    </head>
+    <body>
+        <div class="global-container">
+            <header class="main-header">
+                <h1 class="main-title">m2h</h1>
+                <p class="main-subtitle">Markdown to HTML generator written in Zig</p>
+                <nav class="main-nav">
+    <ul class="nav-links">
+        <li><a href="/" class="button-link">home</a>
+</li>
+
+<li><a href="/about" class="button-link">about</a>
+</li>
+
+<li><a href="/blog" class="button-link">blog</a>
+</li>
+
+<li><a href="/project" class="button-link">project</a>
+</li>
+
+    </ul>
+</nav>
+
+            </header>
+            <div class="main-content">
+ <p>This is an example of <strong class="bold">bold text</strong> in markdown.</p>
+
+ <p>This is an example of <em class="italic">italic text</em> in markdown.</p>
+
+ <p>This is an example of <del class="strikethrough">strikethrough text</del> in markdown.</p>
+
+ <p>This is an example of <code class="inline-code">inline code</code> in markdown.</p>
+
+ <p>Another example of inline <code class="inline-code">&lt;h1&gt;hello world&lt;/h1&gt;</code> code in markdown.</p>
+
+ <p>One more <code class="inline-code">&lt;script&gt;alert(&#39;Hello!&#39;)&lt;/script&gt;</code> example of inline code in markdown.</p>
+
+ <p>This is an example of a <a href="https://www.example.com" class="text-link">link</a>
+ in markdown.</p>
+
+ <p>This is an example of an image in markdown:</p>
+
+<div class="grid grid-2">
+
+
+![Alt text](https://placehold.co/800x400)
+
+</div>
+
+
+ <p>This is an example of a horizontal rule in markdown:</p>
+
+<hr class="divider dashed">
+
+ <p>This is an example of highlighted text in markdown: <mark class="highlight -mark">highlighted text</mark></p>
+
+ <p>this is highlight with different color syntax:</p>
+
+ <p><mark class="highlight primary-mark">highlighted text with different color</mark>.</p>
+
+<hr class="divider dashed">
+
+ <p><mark class="highlight note-mark">highlighted text with different color</mark>.</p>
+
+<hr class="divider dotted">
+
+ <p><mark class="highlight tip-mark">highlighted text with different color</mark>.</p>
+
+<hr class="divider solid">
+
+ <p><mark class="highlight important-mark">highlighted text with different color</mark>.</p>
+
+ <p><mark class="highlight warning-mark">highlighted text with different color</mark>.</p>
+
+ <p><mark class="highlight caution-mark">highlighted text with different color</mark>.</p>
+
+ <p>This is an example of bold and itallic text in markdown: <strong class="bold-italic"><em class="italic">bold and italic text</em></strong>.</p>
+
+ <p>this is multiline paragram does this work?? really</p>
+</div>
+            <footer class="main-footer">
+                <div class="container">
+                    <p>
+                        &copy; <span id="this-year"></span> seg4lt. Markdown to
+                        html generator written in Zig
+                    </p>
+                </div>
+            </footer>
+            <script>
+                document.addEventListener("DOMContentLoaded", (event) => {
+                    document.getElementById("this-year").textContent =
+                        new Date().getFullYear();
+                    hljs.highlightAll();
+                });
+            </script>
+        </div>
+    </body>
+</html>

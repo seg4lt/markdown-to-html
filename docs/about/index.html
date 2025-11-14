@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>About Us - Updated</title>
+        <link rel="stylesheet" href="/styles.css" />
+        <link
+            rel="stylesheet"
+            href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/styles/github-dark.min.css"
+        />
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+        <link
+            href="https://fonts.googleapis.com/css2?family=Cascadia+Code:ital,wght@0,200..700;1,200..700&display=swap"
+            rel="stylesheet"
+        />
+        <link
+            href="https://fonts.googleapis.com/css2?family=Geist+Mono:wght@400;700;900&display=swap"
+            rel="stylesheet"
+        />
+        <script
+            defer
+            src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/highlight.min.js"
+        ></script>
+    </head>
+    <body>
+        <div class="global-container">
+            <header class="main-header">
+                <h1 class="main-title">m2h</h1>
+                <p class="main-subtitle">Markdown to HTML generator written in Zig</p>
+                <nav class="main-nav">
+    <ul class="nav-links">
+        <li><a href="/" class="button-link">home</a>
+</li>
+
+<li><a href="/about" class="button-link">about</a>
+</li>
+
+<li><a href="/blog" class="button-link">blog</a>
+</li>
+
+<li><a href="/project" class="button-link">project</a>
+</li>
+
+    </ul>
+</nav>
+
+            </header>
+            <div class="main-content">
+<h1>About Me</h1>
+
+</div>
+            <footer class="main-footer">
+                <div class="container">
+                    <p>
+                        &copy; <span id="this-year"></span> seg4lt. Markdown to
+                        html generator written in Zig
+                    </p>
+                </div>
+            </footer>
+            <script>
+                document.addEventListener("DOMContentLoaded", (event) => {
+                    document.getElementById("this-year").textContent =
+                        new Date().getFullYear();
+                    hljs.highlightAll();
+                });
+            </script>
+        </div>
+    </body>
+</html>

@@ -1,3 +1,6 @@
 .zig-cache
 zig-out
-dist
+
+# not ignoring dist to make my life easier
+# these are just examples, to much hassle to do this on github actions
+# docs

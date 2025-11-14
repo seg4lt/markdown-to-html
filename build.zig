@@ -37,6 +37,11 @@ pub fn build(b: *std.Build) !void {
 
     if (b.args) |args| {
         run_cmd.addArgs(args);
+    } else {
+        run_cmd.addArg("--app_name=m2h");
+        run_cmd.addArg("--app_subtitle=Markdown to HTML generator written in Zig");
+        run_cmd.addArg("--base_path=example");
+        run_cmd.addArg("--output_path=docs");
     }
 
     const exe_tests = b.addTest(.{
