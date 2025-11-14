@@ -671,9 +671,7 @@ pub const DEFAULT_ORDERED_LIST_HTML =
 pub const DEFAULT_BLOG_SERIES_SECTION_WRAPPER_HTML = 
 \\<section class="blog-series table-of-content">
 \\    <h3>Table of Contents</h3>
-\\    <ol>
-\\        {{content}}
-\\    </ol>
+\\    {{content}}
 \\</section>
 \\
 ;
