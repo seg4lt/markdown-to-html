@@ -53,6 +53,7 @@ fn findOverride(gpa: Allocator, base_path: []const u8, tmpl_path: []const u8, tm
         if (err == error.FileNotFound) return null;
         return err;
     };
+    std.log.debug("Using override for {s}", .{tmpl_name});
     return file_content;
 }
 
@@ -150,6 +151,7 @@ pub fn copyDefaultFiles(self: *Self, output_path: []const u8) !void {
                 return err;
             }
         };
+        std.log.debug("Using override for {s}", .{"styles.css"});
         defer self.gpa.free(content);
 
         const output_file = try std.fs.cwd().createFile(dest_path, .{});

@@ -1,14 +1,21 @@
+// TODO(seg4lt): some inline styles html are inline - maybe move them to tmpl.zig?
+
 const DocInfo = struct {
     file_path: []const u8,
     file_name: []const u8,
     frontmatter: *const Frontmatter,
 };
 
-pub fn generateAll(gpa: Allocator, docs: *const ArrayList(Document), app_name: []const u8, app_subtitle: []const u8, output_base: []const u8, tmpl_manager: *TemplateManager) !void {
+pub fn generateAll(
+    gpa: Allocator,
+    docs: *const ArrayList(Document),
+    app_name: []const u8,
+    app_subtitle: []const u8,
+    output_base: []const u8,
+    tmpl_manager: *TemplateManager,
+) !void {
     var groups = std.StringHashMap(*ArrayList(DocInfo)).init(gpa);
     for (docs.items) |*doc| {
-        std.log.debug("title({s}) file_path({s}), file_name({s})", .{ doc.frontmatter.value.title, doc.file_path, doc.file_name });
-
         const result = try groups.getOrPut(doc.file_path);
         if (!result.found_existing) {
             const list = try gpa.create(ArrayList(DocInfo));
@@ -45,12 +52,23 @@ pub fn generateAll(gpa: Allocator, docs: *const ArrayList(Document), app_name: [
         const full_html = try TemplateManager.replacePlaceholders(
             gpa,
             try tmpl_manager.get(tmpl.TMPL_BASE_HTML.name),
-            &[_][]const u8{ "{{app_name}}", "{{app_subtitle}}", "{{title}}", "{{content}}", "{{main_nav}}" },
-            &[_][]const u8{ app_name, app_subtitle, doc.frontmatter.value.title, html, try tmpl_manager.getMainNav() },
+            &[_][]const u8{
+                "{{app_name}}",
+                "{{app_subtitle}}",
+                "{{title}}",
+                "{{content}}",
+                "{{main_nav}}",
+            },
+            &[_][]const u8{
+                app_name,
+                app_subtitle,
+                doc.frontmatter.value.title,
+                html,
+                try tmpl_manager.getMainNav(),
+            },
         );
         defer gpa.free(full_html);
 
-        // Write to output file
         const output_path = try std.fs.path.join(gpa, &[_][]const u8{ output_base, doc.file_path });
         defer gpa.free(output_path);
 
@@ -595,7 +613,13 @@ const MarkdownInlineStyler = struct {
         const url = self.source[url_pos_start..self.pos];
         self.advance(1); // )
 
-        const link_html = try std.fmt.allocPrint(self.allocator, "<a href=\"{s}\" class=\"text-link\">{s}</a>", .{ url, link_text });
+        const link_html = try TemplateManager.replacePlaceholders(
+            self.allocator,
+            try self.tm.get(tmpl.TMPL_TEXT_LINK_HTML.name),
+            &[_][]const u8{ "{{link}}", "{{text}}" },
+            &[_][]const u8{ url, link_text },
+        );
+
         try self.acc.appendSlice(self.allocator, link_html);
         return true;
     }
