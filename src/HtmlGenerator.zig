@@ -136,10 +136,10 @@ const HtmlGenerator = struct {
         };
         defer self.gpa.free(almost_final_html);
 
-        const final_html = try MarkdownInlineStyler.apply(self.gpa, almost_final_html, self.template_manager);
-        defer self.gpa.free(final_html);
+        // const final_html = try MarkdownInlineStyler.apply(self.gpa, almost_final_html, self.template_manager);
+        // defer self.gpa.free(final_html);
 
-        try self.accumulator.writer.print("\n{s}\n", .{final_html});
+        try self.accumulator.writer.print("\n{s}\n", .{almost_final_html});
         try self.accumulator.writer.flush();
     }
     fn generateList(self: *@This(), list: *Node.List) ![]u8 {
@@ -147,18 +147,21 @@ const HtmlGenerator = struct {
         for (list.items.items, 0..) |item, i| {
             switch (item) {
                 .todo_item => |todo_item| {
+                    const text = try MarkdownInlineStyler.apply(self.gpa, todo_item.content, self.template_manager);
+
                     const item_html = try TemplateManager.replacePlaceholders(
                         self.gpa,
                         try self.template_manager.get(tmpl.TMPL_TASK_LIST_ITEM_HTML.name),
                         &[_][]const u8{ "{{variant}}", "{{content}}" },
                         &[_][]const u8{
                             if (todo_item.checked) "checked" else "unchecked",
-                            todo_item.content,
+                            text,
                         },
                     );
                     try acc.appendSlice(self.gpa, item_html);
                 },
-                .p => |text| {
+                .p => |un_text| {
+                    const text = try MarkdownInlineStyler.apply(self.gpa, un_text, self.template_manager);
                     const item_html = try TemplateManager.replacePlaceholders(
                         self.gpa,
                         switch (list.kind) {
@@ -231,7 +234,8 @@ const HtmlGenerator = struct {
         }
         while (iter.next()) |line| {
             if (mem.trim(u8, line, " \t\r").len == 0) continue;
-            try acc.appendSlice(self.gpa, try std.fmt.allocPrint(self.gpa, "<p>{s}<p>", .{line}));
+            const text = try MarkdownInlineStyler.apply(self.gpa, line, self.template_manager);
+            try acc.appendSlice(self.gpa, try std.fmt.allocPrint(self.gpa, "<p>{s}<p>", .{text}));
         }
 
         const html = try TemplateManager.replacePlaceholders(
@@ -265,6 +269,7 @@ const HtmlGenerator = struct {
         std.log.err("unknown magic marker -- `{s}`", .{marker.name});
         return Error.UnknownMagicMarker;
     }
+
     fn generateBlogSeriesTableOfContent(self: *@This(), marker: Node.MagicMarker) ![]u8 {
         _ = marker;
 
@@ -272,25 +277,35 @@ const HtmlGenerator = struct {
 
         var list_accum = std.io.Writer.Allocating.init(self.gpa);
         // TODO(seg4lt) - need to sort by index, but let's do that later
-        for (blog_list.items) |info| {
+        for (blog_list.items, 0..) |info, i| {
             const link = try std.fmt.allocPrint(self.gpa, "/{s}/{s}.html", .{ info.file_path, info.file_name[0 .. info.file_name.len - 3] }); // remove .md
             defer self.gpa.free(link);
-            const item_html = try TemplateManager.replacePlaceholders(
+
+            const item_link = try TemplateManager.replacePlaceholders(
                 self.gpa,
                 try self.template_manager.get(tmpl.TMPL_BLOG_SERIES_TOC_ITEM_HTML.name),
-                &[_][]const u8{ "{{link}}", "{{title}}" },
-                &[_][]const u8{ link, info.frontmatter.title },
+                &[_][]const u8{ "{{variant}}", "{{number}}", "{{link}}", "{{title}}", "{{date}}" },
+
+                &[_][]const u8{
+                    "primary",
+                    try std.fmt.allocPrint(self.gpa, "{d}", .{i + 1}),
+                    link,
+                    info.frontmatter.title,
+                    info.frontmatter.date,
+                },
             );
-            defer self.gpa.free(item_html);
-            try list_accum.writer.print("{s}\n", .{item_html});
+
+            try list_accum.writer.print("{s}\n", .{item_link});
         }
-        const blog_list_html = try TemplateManager.replacePlaceholders(
+        // mark
+
+        const blog_series_html = try TemplateManager.replacePlaceholders(
             self.gpa,
-            try self.template_manager.get(tmpl.TMPL_BLOG_SERIES_SECTION_WRAPPER_HTML.name),
-            &[_][]const u8{"{{content}}"},
-            &[_][]const u8{try list_accum.toOwnedSlice()},
+            try self.template_manager.get(tmpl.TMPL_ORDERED_LIST_HTML.name),
+            &[_][]const u8{ "{{variant}}", "{{items}}", "{{depth}}" },
+            &[_][]const u8{ "normal", try list_accum.toOwnedSlice(), "1" },
         );
-        return blog_list_html;
+        return blog_series_html;
     }
 
     fn generateBlogList(self: *@This(), marker: Node.MagicMarker) ![]u8 {
@@ -342,17 +357,21 @@ const HtmlGenerator = struct {
 
         // image already handled in inline styler
         if (p_content[0] == '!') return self.gpa.dupe(u8, p_content);
+        
+        const text = try MarkdownInlineStyler.apply(self.gpa, p_content, self.template_manager);
 
         return std.fmt.allocPrint(self.gpa,
             \\ <p>{s}</p>
-        , .{p_content});
+        , .{text});
     }
 
     fn generateHeading(self: *@This(), node: Node) ![]u8 {
-        const text = switch (node) {
+        const unprocessed_text = switch (node) {
             .h1, .h2, .h3, .h4 => |text| text,
             else => std.debug.panic("** bug ** not reachable - only heading should reach here", .{}),
         };
+        const text = try MarkdownInlineStyler.apply(self.gpa, unprocessed_text, self.template_manager);
+        
         const tmpl_str = try self.template_manager.get(tmpl.TMPL_HEADING_HTML.name);
         const final_html = try TemplateManager.replacePlaceholders(
             self.gpa,

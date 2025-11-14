@@ -143,15 +143,21 @@ fn bakeFile(arena: Allocator, acc: *ArrayList(u8), default_var_name: []const u8,
         const line = reader.takeDelimiterInclusive('\n') catch |err| {
             if (err == error.EndOfStream) {
                 if (reader.seek < reader.end) {
-                    try acc.appendSlice(arena, std.mem.trim(u8, reader.buffer[reader.seek..reader.end], " \t"));
-                    try acc.appendSlice(arena, "\n\\\\ ");
+                    const all_remaining = reader.buffer[reader.seek..reader.end];
+                    if (std.mem.trim(u8, all_remaining, " \t\r\n").len != 0) {
+                        try acc.appendSlice(arena, all_remaining);
+                        try acc.appendSlice(arena, "\n\\\\");
+                    }
                 }
                 break;
             }
             return err;
         };
-        try acc.appendSlice(arena, std.mem.trim(u8, line, " \t"));
-        try acc.appendSlice(arena, "\\\\");
+        const all_remaining = line;
+        if (std.mem.trim(u8, all_remaining, " \t\r\n").len != 0) {
+            try acc.appendSlice(arena, line);
+            try acc.appendSlice(arena, "\\\\");
+        }
     }
     try acc.appendSlice(arena, "\n;\n\n");
 }
