@@ -85,7 +85,7 @@ pub fn getMainNav(self: *Self) ![]const u8 {
 
         const nav_link = try replacePlaceholders(
             self.gpa,
-            try self.get(tmpl.TMPL_BUTTON_LINK.name),
+            try self.get(tmpl.TMPL_BUTTON_LINK_HTML.name),
             &[_][]const u8{ "{{link}}", "{{text}}" },
             &[_][]const u8{ link, dir_name.name },
         );
@@ -134,7 +134,7 @@ pub fn copyDefaultFiles(self: *Self, output_path: []const u8) !void {
             if (err == error.FileNotFound) {
                 std.log.info("Template file {s} not found, using default from tmpl.zig", .{file_name});
                 const default_content = if (mem.eql(u8, file_name, "styles.css"))
-                    tmpl.DEFAULT_STYLES
+                    tmpl.DEFAULT_STYLES_CSS
                 else
                     null;
 

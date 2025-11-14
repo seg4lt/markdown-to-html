@@ -11,8 +11,8 @@ pub fn main() !void {
     // };
     const args = claptain.parse(Clap, .{}) catch std.process.exit(1);
 
-    if (args.output_default_tpl) {
-        try outputDefaultTemplates(gpa);
+    if (args.export_default_tmpl) {
+        try exportDefaultTmpl(gpa);
         std.process.exit(0);
     }
 
@@ -35,12 +35,12 @@ const Clap = struct {
     base_path: []const u8 = "example",
     output_path: []const u8 = "dist",
     tmpl_path: []const u8 = "__templates",
-    output_default_tpl: bool = false,
+    export_default_tmpl: bool = false,
 };
 
-fn outputDefaultTemplates(gpa: Allocator) !void {
+fn exportDefaultTmpl(gpa: Allocator) !void {
     const args = claptain.parse(Clap, .{}) catch std.process.exit(1);
-    const output_dir = try std.fs.path.join(gpa, &[_][]const u8{ args.base_path, "__default_templates__" });
+    const output_dir = try std.fs.path.join(gpa, &[_][]const u8{ args.base_path, "__templates" });
     defer gpa.free(output_dir);
 
     // Create the output directory

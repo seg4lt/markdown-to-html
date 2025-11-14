@@ -251,7 +251,7 @@ const HtmlGenerator = struct {
 
         const html = try TemplateManager.replacePlaceholders(
             self.gpa,
-            try self.template_manager.get(tmpl.TMPL_BLOCK_QUOTE.name),
+            try self.template_manager.get(tmpl.TMPL_BLOCK_QUOTE_HTML.name),
             &[_][]const u8{ "{{variant}}", "{{content}}" },
             &[_][]const u8{ @tagName(bq.kind), try acc.toOwnedSlice(self.gpa) },
         );
@@ -268,14 +268,14 @@ const HtmlGenerator = struct {
         if (mem.eql(u8, marker.name, tmpl.MAGIC_GRID_START)) {
             const html = try TemplateManager.replacePlaceholders(
                 self.gpa,
-                try self.template_manager.get(tmpl.TMPL_GRID_START.name),
+                try self.template_manager.get(tmpl.TMPL_GRID_START_HTML.name),
                 &[_][]const u8{"{{count}}"},
                 &[_][]const u8{marker.args.?},
             );
             return html;
         }
         if (mem.eql(u8, marker.name, tmpl.MAGIC_GRID_END)) {
-            return self.gpa.dupe(u8, try self.template_manager.get(tmpl.TMPL_GRID_END.name));
+            return self.gpa.dupe(u8, try self.template_manager.get(tmpl.TMPL_GRID_END_HTML.name));
         }
         std.log.err("unknown magic marker -- `{s}`", .{marker.name});
         return Error.UnknownMagicMarker;
@@ -328,7 +328,7 @@ const HtmlGenerator = struct {
         }
         const blog_list_html = try TemplateManager.replacePlaceholders(
             self.gpa,
-            try self.template_manager.get(tmpl.TMPL_CARD.name),
+            try self.template_manager.get(tmpl.TMPL_CARD_HTML.name),
             &[_][]const u8{ "{{title}}", "{{variant}}", "{{content}}" },
             &[_][]const u8{ "Recent Blogs", "primary", try list_accum.toOwnedSlice() },
         );
@@ -631,7 +631,7 @@ const MarkdownInlineStyler = struct {
 
         const image_card = try TemplateManager.replacePlaceholders(
             self.allocator,
-            try self.tm.get(tmpl.TMPL_CARD.name),
+            try self.tm.get(tmpl.TMPL_CARD_HTML.name),
             &[_][]const u8{ "{{title}}", "{{variant}}", "{{content}}" },
             &[_][]const u8{ alt_text, "primary", img_html },
         );

@@ -1,6 +1,11 @@
 const std = @import("std");
 
-pub fn build(b: *std.Build) void {
+pub fn build(b: *std.Build) !void {
+    generateTmplFile(b.allocator) catch |err| {
+        std.log.err("Unable to generate tmpl file", .{});
+        return err;
+    };
+
     const target = b.standardTargetOptions(.{});
     const optimize = b.standardOptimizeOption(.{});
 
@@ -43,3 +48,118 @@ pub fn build(b: *std.Build) void {
     const test_step = b.step("test", "Run tests");
     test_step.dependOn(&run_exe_tests.step);
 }
+
+fn generateTmplFile(allocator: Allocator) !void {
+    var arena_impl = std.heap.ArenaAllocator.init(allocator);
+    defer _ = arena_impl.reset(.free_all);
+    const arena = arena_impl.allocator();
+
+    const path = try std.fs.path.join(arena, &[_][]const u8{ "example", "__templates" });
+    var dir = try std.fs.cwd().openDir(path, .{ .iterate = true });
+    defer dir.close();
+
+    var it = dir.iterate();
+
+    var acc: std.ArrayList(u8) = .empty;
+    const initial =
+        \\ pub const MAGIC_MARKER_PREFIX = "{{ @@";
+        \\ pub const MAGIC_INCLUDE_HTML = "@@include_html";
+        \\ pub const MAGIC_INCLUDE_HTML_DATA = "```@@include_html_data";
+        \\ pub const MAGIC_BLOG_LIST = "@@blog_list";
+        \\ pub const MAGIC_BLOG_SERIES_TOC = "@@blog_series_toc";
+        \\ pub const MAGIC_FRONTMATTER = "@@frontmatter";
+        \\ pub const MAGIC_GRID_START = "@@grid_start";
+        \\ pub const MAGIC_GRID_END = "@@grid_end";
+        \\ 
+        \\ pub const Template = struct { name: []const u8, content: []const u8 };
+        \\
+    ;
+    try acc.appendSlice(arena, initial);
+
+    var tmpl_name_acc: ArrayList([]const u8) = .empty;
+
+    while (try it.next()) |dir_entry| {
+        switch (dir_entry.kind) {
+            .file => {
+                if (!std.mem.endsWith(u8, dir_entry.name, ".html") and !std.mem.endsWith(u8, dir_entry.name, ".css")) continue;
+
+                const upper_name = try toUpper(arena, dir_entry.name);
+
+                const tmpl_var_name = try std.fmt.allocPrint(arena, "TMPL_{s}", .{upper_name});
+                const default_var_name = try std.fmt.allocPrint(arena, "DEFAULT_{s}", .{upper_name});
+
+                try tmpl_name_acc.append(arena, tmpl_var_name);
+
+                const template_base =
+                    \\ pub const {s}: Template = .{{ .name = "{s}", .content = {s} }};
+                    \\
+                ;
+                const tmpl_line = try std.fmt.allocPrint(arena, template_base, .{ tmpl_var_name, dir_entry.name, default_var_name });
+
+                try acc.appendSlice(arena, tmpl_line);
+
+                try bakeFile(arena, &acc, default_var_name, dir, dir_entry.name);
+            },
+            else => std.log.info("only first level files are not supported ..", .{}),
+        }
+    }
+
+    try acc.appendSlice(arena, "pub const TEMPLATES = [_]Template{\n");
+    for (tmpl_name_acc.items) |tmpl_name| {
+        try acc.appendSlice(arena, "    ");
+        try acc.appendSlice(arena, tmpl_name);
+        try acc.appendSlice(arena, ",\n");
+    }
+    try acc.appendSlice(arena, "};\n");
+
+    var src_dir = try std.fs.cwd().openDir("src", .{});
+    defer src_dir.close();
+
+    try src_dir.writeFile(.{ .sub_path = "tmpl.zig", .data = acc.items, .flags = .{} });
+}
+
+fn bakeFile(arena: Allocator, acc: *ArrayList(u8), default_var_name: []const u8, dir: Dir, file_name: []const u8) !void {
+    try acc.appendSlice(arena, "\npub const ");
+    try acc.appendSlice(arena, default_var_name);
+    try acc.appendSlice(arena, " = \n");
+    try acc.appendSlice(arena, "\\\\ ");
+
+    const file = try dir.openFile(file_name, .{});
+    defer file.close();
+
+    var reader_buf: [1024]u8 = undefined;
+    var reader_state = file.reader(&reader_buf);
+    var reader = &reader_state.interface;
+
+    while (true) {
+        const line = reader.takeDelimiterInclusive('\n') catch |err| {
+            if (err == error.EndOfStream) {
+                if (reader.seek < reader.end) {
+                    try acc.appendSlice(arena, reader.buffer[reader.seek..reader.end]);
+                    try acc.appendSlice(arena, "\n\\\\ ");
+                }
+                break;
+            }
+            return err;
+        };
+        try acc.appendSlice(arena, line);
+        try acc.appendSlice(arena, "\\\\ ");
+    }
+    try acc.appendSlice(arena, "\n;\n\n");
+}
+
+fn toUpper(arena: Allocator, str: []const u8) ![]u8 {
+    var result = try arena.alloc(u8, str.len);
+    for (str, 0..) |c, i| {
+        if (c == '.') {
+            result[i] = '_';
+            continue;
+        }
+        result[i] = std.ascii.toUpper(c);
+    }
+    return result[0..];
+}
+
+const Allocator = std.mem.Allocator;
+const Dir = std.fs.Dir;
+const ArrayList = std.ArrayList;
