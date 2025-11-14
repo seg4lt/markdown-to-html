@@ -143,46 +143,13 @@ const HtmlGenerator = struct {
         try self.accumulator.writer.flush();
     }
     fn generateList(self: *@This(), list: *Node.List) ![]u8 {
-        const task_list_tmpl =
-            \\ <ul class="{{variant}}-task-list {{variant}}-unordered-list-depth-{{depth}}">
-            \\     {{items}}
-            \\ </ul>
-        ;
-        const ul_tmpl =
-            \\ <ul class="{{variant}}-unordered-list {{variant}}-unordered-list-depth-{{depth}}">
-            \\   {{items}}
-            \\ </ul>
-        ;
-        const ol_tmpl =
-            \\ <ol class="{{variant}}-ordered-list {{variant}}-ordered-list-depth-{{depth}}">
-            \\   {{items}}
-            \\ </ol>
-        ;
-        const todo_li_tmpl =
-            \\ <li>
-            \\     <span class="checkbox {{variant}}"></span>
-            \\     <span>{{content}}</span>
-            \\ </li>
-        ;
-        const ul_li_tmpl =
-            \\      <li>
-            \\          <span class="bullet {{variant}}-bullet"></span>
-            \\          <span>{{content}}</span>
-            \\      </li>
-        ;
-        const ol_li_tmpl =
-            \\     <li>
-            \\         <span class="number {{variant}}-number">{{number}}</span>
-            \\         <span>{{content}}</span>
-            \\     </li>
-        ;
         var acc: ArrayList(u8) = .empty;
         for (list.items.items, 0..) |item, i| {
             switch (item) {
                 .todo_item => |todo_item| {
                     const item_html = try TemplateManager.replacePlaceholders(
                         self.gpa,
-                        todo_li_tmpl,
+                        try self.template_manager.get(tmpl.TMPL_TASK_LIST_ITEM_HTML.name),
                         &[_][]const u8{ "{{variant}}", "{{content}}" },
                         &[_][]const u8{
                             if (todo_item.checked) "checked" else "unchecked",
@@ -195,9 +162,9 @@ const HtmlGenerator = struct {
                     const item_html = try TemplateManager.replacePlaceholders(
                         self.gpa,
                         switch (list.kind) {
-                            .ordered => ol_li_tmpl,
-                            .unordered => ul_li_tmpl,
-                            .todo => todo_li_tmpl,
+                            .ordered => try self.template_manager.get(tmpl.TMPL_ORDERED_LIST_ITEM_HTML.name),
+                            .unordered => try self.template_manager.get(tmpl.TMPL_UNORDERED_LIST_ITEM_HTML.name),
+                            .todo => try self.template_manager.get(tmpl.TMPL_TASK_LIST_ITEM_HTML.name),
                         },
                         &[_][]const u8{ "{{variant}}", "{{number}}", "{{content}}" },
                         &[_][]const u8{
@@ -221,9 +188,9 @@ const HtmlGenerator = struct {
         const html = try TemplateManager.replacePlaceholders(
             self.gpa,
             switch (list.kind) {
-                .ordered => ol_tmpl,
-                .unordered => ul_tmpl,
-                .todo => task_list_tmpl,
+                .ordered => try self.template_manager.get(tmpl.TMPL_ORDERED_LIST_HTML.name),
+                .unordered => try self.template_manager.get(tmpl.TMPL_UNORDERED_LIST_HTML.name),
+                .todo => try self.template_manager.get(tmpl.TMPL_TASK_LIST_HTML.name),
             },
             &[_][]const u8{ "{{variant}}", "{{items}}", "{{depth}}" },
             &[_][]const u8{
