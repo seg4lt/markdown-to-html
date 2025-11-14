@@ -377,6 +377,7 @@ const Parser = struct {
             if (self.isMagicMarker()) break;
             if (self.isBlockquote()) break;
             if (self.isDivider()) break;
+            if (isList(self.tokenizer.peekLine()) != null) break;
             if (mem.trim(u8, self.tokenizer.peekLine(), " \t\r").len == 0) break;
             try acc.appendSlice(self.gpa, " ");
         }
