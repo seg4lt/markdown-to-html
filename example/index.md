@@ -19,23 +19,25 @@ zig build
 ./zig-out/bin/m2h
 ```
 
-Generates HTML from markdown files in `example/` folder and outputs to `dist/`
+Generates HTML from markdown files in `example/` folder and drops the site into `markdown-to-html/`.
+Pass `--web_root=/my-subdir` if you need links to be prefixed (handy for GitHub Pages projects).
 
 ## Command Line Flags
 
 ```bash
-./zig-out/bin/m2h --base_path=example --output_path=dist --tmpl_path=__templates
+./zig-out/bin/m2h --md_base_path=example --output_base_path=markdown-to-html --tmpl_base_path=__templates --web_root=/markdown-to-html
 ```
 
 All flags are optional with these defaults:
-- `--base_path` = `example` (where your markdown files are)
-- `--output_path` = `dist` (where HTML goes)
-- `--tmpl_path` = `__templates` (template folder name inside base_path)
+- `--md_base_path` = `example` (where your markdown files are)
+- `--output_base_path` = `markdown-to-html` (where HTML goes)
+- `--tmpl_base_path` = `__templates` (template folder name inside base_path)
 - `--app_name` = `m2h` (used in HTML title)
 - `--app_subtitle` = `Markdown to HTML generator written in Zig`
+- `--web_root` = `` (leave blank unless you host under a sub-path)
 - `--export_default_tmpl` = `false` (exports default templates to see what's available)
 
-So basically it looks for markdown in `example/`, templates in `example/__templates/`, and outputs to `dist/`.
+So basically it looks for markdown in `example/`, templates in `example/__templates/`, and outputs to `markdown-to-html/`.
 
 ## Folder Structre
 
@@ -135,9 +137,9 @@ Each item links to that post. Same folder = series. Thats it.
 ## TODO
 - [ ] blog series add previous and next links
 - [ ] when limiting number of items in blog list, add "show more" link
-  - [ ] show more should take you to place where you can see all posts but with basic pagination
-  - [ ] maybe add blog search feature / local fuzzy search?
-  - [ ] this search can be maybe magic marker and can be added anywhere.
+- [ ] show more should take you to place where you can see all posts but with basic pagination
+- [ ] maybe add blog search feature / local fuzzy search?
+- [ ] this search can be maybe magic marker and can be added anywhere.
 - [ ] when limiting numbr of items on blog series, show exact items, but if we have older items, show previous two and any other items should be current and new.
 - [ ] Parse table
 - [ ] add support for @@include_html and @@include_html_data for some dynamism - so I don't need to create parser for each type of thing I want to support

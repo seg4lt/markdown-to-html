@@ -66,13 +66,13 @@
 </code></pre> 
 
 
-<p>Generates HTML from markdown files in <code class="inline-code">example/</code> folder and outputs to <code class="inline-code">dist/</code></p>
+<p>Generates HTML from markdown files in <code class="inline-code">example/</code> folder and drops the site into <code class="inline-code">markdown-to-html/</code>. Pass <code class="inline-code">--web_root=/my-subdir</code> if you need links to be prefixed (handy for GitHub Pages projects).</p>
 
 
 <h2>Command Line Flags</h2>
 
 
-<pre class="code-block"><code class="language-bash">./zig-out/bin/m2h --base_path=example --output_path=dist --tmpl_path=__templates
+<pre class="code-block"><code class="language-bash">./zig-out/bin/m2h --md_base_path=example --output_base_path=markdown-to-html --tmpl_base_path=__templates --web_root=/markdown-to-html
 </code></pre> 
 
 
@@ -82,15 +82,15 @@
 <ul class="normal-unordered-list normal-unordered-list-depth-1">
 <li>
 <span class="bullet primary-bullet"></span>
-<span><code class="inline-code">--base_path</code> = <code class="inline-code">example</code> (where your markdown files are)</span>
+<span><code class="inline-code">--md_base_path</code> = <code class="inline-code">example</code> (where your markdown files are)</span>
 </li> 
 <li>
 <span class="bullet primary-bullet"></span>
-<span><code class="inline-code">--output_path</code> = <code class="inline-code">dist</code> (where HTML goes)</span>
+<span><code class="inline-code">--output_base_path</code> = <code class="inline-code">markdown-to-html</code> (where HTML goes)</span>
 </li> 
 <li>
 <span class="bullet primary-bullet"></span>
-<span><code class="inline-code">--tmpl_path</code> = <code class="inline-code">__templates</code> (template folder name inside base<em class="italic">path)</em></span>
+<span><code class="inline-code">--tmpl_base_path</code> = <code class="inline-code">__templates</code> (template folder name inside base<em class="italic">path)</em></span>
 </li> 
 <li>
 <span class="bullet primary-bullet"></span>
@@ -102,13 +102,17 @@
 </li> 
 <li>
 <span class="bullet primary-bullet"></span>
+<span><code class="inline-code">--web_root</code> = <code class="inline-code"></code> (leave blank unless you host under a sub-path)</span>
+</li> 
+<li>
+<span class="bullet primary-bullet"></span>
 <span><code class="inline-code">--export_default_tmpl</code> = <code class="inline-code">false</code> (exports default templates to see what's available)</span>
 </li> 
 
 </ul> 
 
 
-<p>So basically it looks for markdown in <code class="inline-code">example/</code>, templates in <code class="inline-code">example/__templates/</code>, and outputs to <code class="inline-code">dist/</code>.</p>
+<p>So basically it looks for markdown in <code class="inline-code">example/</code>, templates in <code class="inline-code">example/__templates/</code>, and outputs to <code class="inline-code">markdown-to-html/</code>.</p>
 
 
 <h2>Folder Structre</h2>
@@ -266,19 +270,27 @@ your content here...
 <ul class="normal-task-list normal-unordered-list-depth-1">
 <li>
 <span class="checkbox unchecked"></span>
-<span>relative path support</span>
+<span>blog series add previous and next links</span>
 </li>
 <li>
 <span class="checkbox unchecked"></span>
-<span>Sort blog content</span>
+<span>when limiting number of items in blog list, add "show more" link</span>
 </li>
 <li>
 <span class="checkbox unchecked"></span>
-<span>@@blog<em class="italic">list to support number of blog</em></span>
+<span>show more should take you to place where you can see all posts but with basic pagination</span>
 </li>
 <li>
 <span class="checkbox unchecked"></span>
-<span>gen html should have date based folder structure</span>
+<span>maybe add blog search feature / local fuzzy search?</span>
+</li>
+<li>
+<span class="checkbox unchecked"></span>
+<span>this search can be maybe magic marker and can be added anywhere.</span>
+</li>
+<li>
+<span class="checkbox unchecked"></span>
+<span>when limiting numbr of items on blog series, show exact items, but if we have older items, show previous two and any other items should be current and new.</span>
 </li>
 <li>
 <span class="checkbox unchecked"></span>
@@ -286,23 +298,7 @@ your content here...
 </li>
 <li>
 <span class="checkbox unchecked"></span>
-<span>fix table of content for table series</span>
-</li>
-<li>
-<span class="checkbox unchecked"></span>
-<span>fix sorting on table of content using index</span>
-</li>
-<li>
-<span class="checkbox unchecked"></span>
 <span>add support for @@include<em class="italic">html and @@include</em>html<em class="italic">data for some dynamism - so I don't need to create parser for each type of thing I want to support</em></span>
-</li>
-<li>
-<span class="checkbox unchecked"></span>
-<span>ol/ul list template on <code class="inline-code">__templates</code> folder so it can be picked up by build script</span>
-</li>
-<li>
-<span class="checkbox unchecked"></span>
-<span>For quick prototyping I was using gpa everywhere, and not cleaning up memory properly. Fix that !!</span>
 </li>
 
 </ul>
