@@ -19,7 +19,7 @@
  pub const TMPL_BUTTON_LINK_HTML: Template = .{ .name = "button_link.html", .content = DEFAULT_BUTTON_LINK_HTML };
 
 pub const DEFAULT_BUTTON_LINK_HTML = 
-\\<a href="{{link}}" class="button-link">{{text}}</a>
+\\<a href="{{link}}" class="button-link" {{target}}>{{text}}</a>
 \\
 ;
 
@@ -588,7 +588,7 @@ pub const DEFAULT_BASE_HTML =
 \\        <meta charset="UTF-8" />
 \\        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 \\        <title>{{title}} - Updated</title>
-\\        <link rel="stylesheet" href="/styles.css" />
+\\        <link rel="stylesheet" href="{{web_root}}/styles.css" />
 \\        <link
 \\            rel="stylesheet"
 \\            href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/styles/github-dark.min.css"
@@ -653,7 +653,7 @@ pub const DEFAULT_CARD_HTML =
  pub const TMPL_TEXT_LINK_HTML: Template = .{ .name = "text_link.html", .content = DEFAULT_TEXT_LINK_HTML };
 
 pub const DEFAULT_TEXT_LINK_HTML = 
-\\<a href="{{link}}" class="text-link">{{text}}</a>
+\\<a href="{{link}}" class="text-link" {{target}}>{{text}}</a>
 \\
 ;
 
@@ -729,7 +729,7 @@ pub const DEFAULT_GRID_END_HTML =
  pub const TMPL_TEXT_LINK_ALT_HTML: Template = .{ .name = "text_link_alt.html", .content = DEFAULT_TEXT_LINK_ALT_HTML };
 
 pub const DEFAULT_TEXT_LINK_ALT_HTML = 
-\\<a href="{{link}}" class="text-link">{{text}}</a>
+\\<a href="{{link}}" class="text-link" {{target}}>{{text}}</a>
 \\
 ;
 

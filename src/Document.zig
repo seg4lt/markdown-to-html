@@ -2,15 +2,13 @@ nodes: ArrayList(Node),
 file_path: []const u8,
 file_name: []const u8,
 frontmatter: ParsedFrontmatter,
-gpa: Allocator,
 
-pub fn init(gpa: Allocator, nodes: ArrayList(Node), frontmatter: ParsedFrontmatter, file_path: []const u8, file_name: []const u8) @This() {
+pub fn init(nodes: ArrayList(Node), frontmatter: ParsedFrontmatter, file_path: []const u8, file_name: []const u8) @This() {
     return .{
         .nodes = nodes,
         .frontmatter = frontmatter,
         .file_path = file_path,
         .file_name = file_name,
-        .gpa = gpa,
     };
 }
 

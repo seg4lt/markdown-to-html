@@ -4,7 +4,7 @@
         <meta charset="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
         <title>Example Markdown - Updated</title>
-        <link rel="stylesheet" href="/styles.css" />
+        <link rel="stylesheet" href="/markdown-to-html/styles.css" />
         <link
             rel="stylesheet"
             href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/styles/github-dark.min.css"
@@ -31,16 +31,16 @@
                 <p class="main-subtitle">Markdown to HTML generator written in Zig</p>
                 <nav class="main-nav">
     <ul class="nav-links">
-        <li><a href="/" class="button-link">home</a>
+        <li><a href="/markdown-to-html/" class="button-link" {{target}}>Home</a>
 </li>
 
-<li><a href="/about" class="button-link">about</a>
+<li><a href="/markdown-to-html/about" class="button-link" {{target}}>about</a>
 </li>
 
-<li><a href="/blog" class="button-link">blog</a>
+<li><a href="/markdown-to-html/blog" class="button-link" {{target}}>blog</a>
 </li>
 
-<li><a href="/project" class="button-link">project</a>
+<li><a href="/markdown-to-html/project" class="button-link" {{target}}>project</a>
 </li>
 
     </ul>
@@ -51,7 +51,8 @@
 <h1>m2h</h1>
 
 
- <p>Markdown to HTML converter written in Zig. Very opinionated and supports only what I need.</p>
+<p>Markdown to HTML converter written in Zig. Very opinionated and supports only what I need.</p>
+
 
 <h2>Quick Start</h2>
 
@@ -61,7 +62,8 @@
 </code></pre> 
 
 
- <p>Generates HTML from markdown files in <code class="inline-code">example/</code> folder and outputs to <code class="inline-code">dist/</code></p>
+<p>Generates HTML from markdown files in <code class="inline-code">example/</code> folder and outputs to <code class="inline-code">dist/</code></p>
+
 
 <h2>Command Line Flags</h2>
 
@@ -70,7 +72,8 @@
 </code></pre> 
 
 
- <p>All flags are optional with these defaults:</p>
+<p>All flags are optional with these defaults:</p>
+
 
 <ul class="normal-unordered-list normal-unordered-list-depth-1">
 <li>
@@ -101,7 +104,8 @@
 </ul> 
 
 
- <p>So basically it looks for markdown in <code class="inline-code">example/</code>, templates in <code class="inline-code">example/__templates/</code>, and outputs to <code class="inline-code">dist/</code>.</p>
+<p>So basically it looks for markdown in <code class="inline-code">example/</code>, templates in <code class="inline-code">example/__templates/</code>, and outputs to <code class="inline-code">dist/</code>.</p>
+
 
 <h2>Folder Structre</h2>
 
@@ -118,26 +122,31 @@
 </code></pre> 
 
 
- <p>The generator walks through all <code class="inline-code">.md</code> files and converts them to HTML.</p>
+<p>The generator walks through all <code class="inline-code">.md</code> files and converts them to HTML.</p>
+
 
 <h2>Override Templates & Styles</h2>
 
 
- <p>Just drop your custom template in <code class="inline-code">example/__templates/</code> folder. The build script will automatically bake them into the binary.</p>
+<p>Just drop your custom template in <code class="inline-code">example/__templates/</code> folder. The build script will automatically bake them into the binary.</p>
 
- <p>Example - to change how headings look:</p>
+
+<p>Example - to change how headings look:</p>
+
 
 <pre class="code-block"><code class="language-html"><!-- __templates/heading.html -->
 <h{{level}} class="my-custom-class">{{content}}</h{{level}}>
 </code></pre> 
 
 
- <p>Same for styles - edit <code class="inline-code">__templates/styles.css</code> and rebuild.</p>
+<p>Same for styles - edit <code class="inline-code">__templates/styles.css</code> and rebuild.</p>
+
 
 <h2>Magic Markers</h2>
 
 
- <p>These are special markers you can use in markdown:</p>
+<p>These are special markers you can use in markdown:</p>
+
 
 <h3>Blog List</h3>
 
@@ -146,47 +155,54 @@
 </code></pre> 
 
 
- <p>Generates list of all blog posts with frontmatter like below</p>
+<p>Generates list of all blog posts with frontmatter like below</p>
+
 
 <section class="card">
     <!-- variant == primary, accent, secondary -->
     <div class="card-header primary-header">
         <h2 class="card-title">Recent Blogs</h2>
     </div>
-    <div class="card-content"><a href="/blog/test_series/test_series_01.html" class="blog-list-item-link button-link">
+    <div class="card-content"><a href="/markdown-to-html/blog/test_series/test_series_01.html" class="blog-list-item-link button-link">
     <div class="blog-list-item-title">Test Series 01</div>
     <div class="blog-list-item-desc">This is the first test series markdown file.</div>
     <div class="blog-list-item-date">2024-06-15</div>
 </a>
 
-<a href="/blog/test_series/test_series_02.html" class="blog-list-item-link button-link">
+<a href="/markdown-to-html/blog/test_series/test_series_02.html" class="blog-list-item-link button-link">
     <div class="blog-list-item-title">Test Series 02</div>
     <div class="blog-list-item-desc">This is the second test series markdown file.</div>
     <div class="blog-list-item-date">2024-06-15</div>
 </a>
 
-<a href="/blog/inline_styles.html" class="blog-list-item-link button-link">
+<a href="/markdown-to-html/blog/inline_styles.html" class="blog-list-item-link button-link">
     <div class="blog-list-item-title">Inline Style Examples</div>
     <div class="blog-list-item-desc">Examples of different inline styles in markdown.</div>
     <div class="blog-list-item-date">2024-06-15</div>
 </a>
 
-<a href="/blog/list.html" class="blog-list-item-link button-link">
+<a href="/markdown-to-html/blog/list.html" class="blog-list-item-link button-link">
     <div class="blog-list-item-title">List Example</div>
     <div class="blog-list-item-desc">List example in markdown.</div>
     <div class="blog-list-item-date">2024-06-15</div>
 </a>
 
-<a href="/blog/block-quote.html" class="blog-list-item-link button-link">
+<a href="/markdown-to-html/blog/block-quote.html" class="blog-list-item-link button-link">
     <div class="blog-list-item-title">Block Quote Examples</div>
     <div class="blog-list-item-desc">Examples of different block quote types in markdown.</div>
     <div class="blog-list-item-date">2024-06-15</div>
 </a>
 
-<a href="/blog/index.html" class="blog-list-item-link button-link">
+<a href="/markdown-to-html/blog/index.html" class="blog-list-item-link button-link">
     <div class="blog-list-item-title">Blog Page</div>
     <div class="blog-list-item-desc">This is a blog page example.</div>
     <div class="blog-list-item-date">2024-06-01</div>
+</a>
+
+<a href="/markdown-to-html/blog/links-demo.html" class="blog-list-item-link button-link">
+    <div class="blog-list-item-title">Links Demo</div>
+    <div class="blog-list-item-desc">Demonstration of different types of links in markdown.</div>
+    <div class="blog-list-item-date">2024-06-20</div>
 </a>
 
 </div>
@@ -200,7 +216,8 @@
 </code></pre> 
 
 
- <p>Creates table of contents for blog series</p>
+<p>Creates table of contents for blog series</p>
+
 
 <h3>Grid Layout</h3>
 
@@ -213,12 +230,14 @@ your content here...
 </code></pre> 
 
 
- <p>Creates responsive grid with 3 columns</p>
+<p>Creates responsive grid with 3 columns</p>
+
 
 <h2>Highlight with Colors</h2>
 
 
- <p>Use <code class="inline-code">==text==</code> for highlights. You can add color variants:</p>
+<p>Use <code class="inline-code">==text==</code> for highlights. You can add color variants:</p>
+
 
 <pre class="code-block"><code class="language-markdown">==normal highlight==
 ==important text===important=
@@ -227,12 +246,14 @@ your content here...
 </code></pre> 
 
 
- <p>The variant gets added as CSS class so you can style them however you want.</p>
+<p>The variant gets added as CSS class so you can style them however you want.</p>
+
 
 <h2>Blog Series</h2>
 
 
- <p>Put related posts in same folder and use the magic marker:</p>
+<p>Put related posts in same folder and use the magic marker:</p>
+
 
 <pre class="code-block"><code>example/blog/test_series/
 ├── test_series_01.md
@@ -240,13 +261,15 @@ your content here...
 </code></pre> 
 
 
- <p>In any of those files add:</p>
+<p>In any of those files add:</p>
+
 
 <pre class="code-block"><code class="language-markdown">{{ @@blog_series_toc }}
 </code></pre> 
 
 
- <p>Generates something like:</p>
+<p>Generates something like:</p>
+
 
 <pre class="code-block"><code>Table of Contents
 1. Test Series 01
@@ -254,7 +277,8 @@ your content here...
 </code></pre> 
 
 
- <p>Each item links to that post. Same folder = series. Thats it.</p>
+<p>Each item links to that post. Same folder = series. Thats it.</p>
+
 
 <h2>TODO</h2>
 

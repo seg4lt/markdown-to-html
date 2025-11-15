@@ -1,5 +1,3 @@
-// TODO(seg4lt): some inline styles html are inline - maybe move them to tmpl.zig?
-
 const DocInfo = struct {
     file_path: []const u8,
     file_name: []const u8,
@@ -7,22 +5,21 @@ const DocInfo = struct {
 };
 
 pub fn generateAll(
-    gpa: Allocator,
+    mem_ctx: *MemCtx,
     docs: *const ArrayList(Document),
-    app_name: []const u8,
-    app_subtitle: []const u8,
-    output_base: []const u8,
     tmpl_manager: *TemplateManager,
+    args: *const AppArgs,
 ) !void {
-    var groups = std.StringHashMap(*ArrayList(DocInfo)).init(gpa);
+    var content_groups = std.StringHashMap(*ArrayList(DocInfo)).init(mem_ctx.global);
+
     for (docs.items) |*doc| {
-        const result = try groups.getOrPut(doc.file_path);
+        const result = try content_groups.getOrPut(doc.file_path);
         if (!result.found_existing) {
-            const list = try gpa.create(ArrayList(DocInfo));
+            const list = try mem_ctx.global.create(ArrayList(DocInfo));
             list.* = .empty;
             result.value_ptr.* = list;
         }
-        try result.value_ptr.*.append(gpa, .{
+        try result.value_ptr.*.append(mem_ctx.global, .{
             .file_path = doc.file_path,
             .file_name = doc.file_name,
             .frontmatter = &doc.frontmatter.value,
@@ -30,13 +27,13 @@ pub fn generateAll(
 
         // blog is special, so we collect sub items as well
         if (mem.startsWith(u8, doc.file_path, "blog/")) {
-            const blog_result = try groups.getOrPut("blog");
+            const blog_result = try content_groups.getOrPut("blog");
             if (!blog_result.found_existing) {
-                const list = try gpa.create(ArrayList(DocInfo));
+                const list = try mem_ctx.global.create(ArrayList(DocInfo));
                 list.* = .empty;
                 blog_result.value_ptr.* = list;
             }
-            try blog_result.value_ptr.*.append(gpa, .{
+            try blog_result.value_ptr.*.append(mem_ctx.global, .{
                 .file_path = doc.file_path,
                 .file_name = doc.file_name,
                 .frontmatter = &doc.frontmatter.value,
@@ -45,12 +42,13 @@ pub fn generateAll(
     }
 
     for (docs.items) |*doc| {
-        var generator = HtmlGenerator.init(gpa, doc, output_base, tmpl_manager, &groups);
+        defer mem_ctx.resetScratch();
+
+        var generator = HtmlGenerator.init(mem_ctx.scratch, doc, tmpl_manager, &content_groups, args);
         const html = try generator.generate();
 
-        // Apply base template with main_nav
         const full_html = try TemplateManager.replacePlaceholders(
-            gpa,
+            mem_ctx.scratch,
             try tmpl_manager.get(tmpl.TMPL_BASE_HTML.name),
             &[_][]const u8{
                 "{{app_name}}",
@@ -58,41 +56,43 @@ pub fn generateAll(
                 "{{title}}",
                 "{{content}}",
                 "{{main_nav}}",
+                "{{web_root}}",
             },
             &[_][]const u8{
-                app_name,
-                app_subtitle,
+                args.app_name,
+                args.app_subtitle,
                 doc.frontmatter.value.title,
                 html,
                 try tmpl_manager.getMainNav(),
+                args.web_root,
             },
         );
-        defer gpa.free(full_html);
 
-        const output_path = try std.fs.path.join(gpa, &[_][]const u8{ output_base, doc.file_path });
-        defer gpa.free(output_path);
+        const output_path = try std.fs.path.join(
+            mem_ctx.scratch,
+            &[_][]const u8{ args.output_base_path, doc.file_path },
+        );
 
         std.fs.cwd().makePath(output_path) catch |err| if (err != error.PathAlreadyExists) return err;
 
-        const output_file_path = try std.fs.path.join(gpa, &[_][]const u8{ output_path, doc.file_name });
-        defer gpa.free(output_file_path);
+        const output_file_path = try std.fs.path.join(mem_ctx.scratch, &[_][]const u8{ output_path, doc.file_name });
 
-        const html_name = try std.mem.replaceOwned(u8, gpa, output_file_path, ".md", ".html");
-        defer gpa.free(html_name);
+        const html_name = try std.mem.replaceOwned(u8, mem_ctx.global, output_file_path, ".md", ".html");
 
         const output_file = try std.fs.cwd().createFile(html_name, .{});
         defer output_file.close();
+
         try output_file.writeAll(full_html);
     }
 }
 
 const HtmlGenerator = struct {
-    gpa: Allocator,
+    arena: Allocator,
     document: *const Document,
-    output_path: []const u8,
     template_manager: *TemplateManager,
     groups: *const std.StringHashMap(*ArrayList(DocInfo)),
-    accumulator: std.Io.Writer.Allocating,
+    accumulator: ArrayList(u8),
+    args: *const AppArgs,
 
     const Self = @This();
 
@@ -102,14 +102,20 @@ const HtmlGenerator = struct {
         UnknownMagicMarker,
     };
 
-    fn init(gpa: Allocator, doc: *const Document, output_path: []const u8, template_manager: *TemplateManager, groups: *std.StringHashMap(*ArrayList(DocInfo))) @This() {
+    fn init(
+        arena: Allocator,
+        doc: *const Document,
+        template_manager: *TemplateManager,
+        groups: *std.StringHashMap(*ArrayList(DocInfo)),
+        args: *const AppArgs,
+    ) @This() {
         return .{
-            .gpa = gpa,
-            .output_path = output_path,
+            .arena = arena,
             .document = doc,
             .groups = groups,
             .template_manager = template_manager,
-            .accumulator = std.io.Writer.Allocating.init(gpa),
+            .accumulator = .empty,
+            .args = args,
         };
     }
 
@@ -120,8 +126,7 @@ const HtmlGenerator = struct {
             }
             try self.generateNode(node);
         }
-        var a = self.accumulator;
-        return try a.toOwnedSlice();
+        return self.accumulator.items;
     }
 
     fn generateNode(self: *@This(), node: Node) !void {
@@ -134,23 +139,20 @@ const HtmlGenerator = struct {
             .divider => |dtype| try self.generateDividerType(dtype),
             .list => |list| try self.generateList(list),
         };
-        defer self.gpa.free(almost_final_html);
-
-        // const final_html = try MarkdownInlineStyler.apply(self.gpa, almost_final_html, self.template_manager);
-        // defer self.gpa.free(final_html);
-
-        try self.accumulator.writer.print("\n{s}\n", .{almost_final_html});
-        try self.accumulator.writer.flush();
+        try self.accumulator.appendSlice(self.arena, "\n");
+        try self.accumulator.appendSlice(self.arena, almost_final_html);
+        try self.accumulator.appendSlice(self.arena, "\n");
     }
+
     fn generateList(self: *@This(), list: *Node.List) ![]u8 {
-        var acc: ArrayList(u8) = .empty;
+        var list_content: ArrayList(u8) = .empty;
         for (list.items.items, 0..) |item, i| {
             switch (item) {
                 .todo_item => |todo_item| {
-                    const text = try MarkdownInlineStyler.apply(self.gpa, todo_item.content, self.template_manager);
+                    const text = try InlineStyler.apply(self.arena, todo_item.content, self.template_manager, self.args);
 
                     const item_html = try TemplateManager.replacePlaceholders(
-                        self.gpa,
+                        self.arena,
                         try self.template_manager.get(tmpl.TMPL_TASK_LIST_ITEM_HTML.name),
                         &[_][]const u8{ "{{variant}}", "{{content}}" },
                         &[_][]const u8{
@@ -158,12 +160,12 @@ const HtmlGenerator = struct {
                             text,
                         },
                     );
-                    try acc.appendSlice(self.gpa, item_html);
+                    try list_content.appendSlice(self.arena, item_html);
                 },
                 .p => |un_text| {
-                    const text = try MarkdownInlineStyler.apply(self.gpa, un_text, self.template_manager);
+                    const text = try InlineStyler.apply(self.arena, un_text, self.template_manager, self.args);
                     const item_html = try TemplateManager.replacePlaceholders(
-                        self.gpa,
+                        self.arena,
                         switch (list.kind) {
                             .ordered => try self.template_manager.get(tmpl.TMPL_ORDERED_LIST_ITEM_HTML.name),
                             .unordered => try self.template_manager.get(tmpl.TMPL_UNORDERED_LIST_ITEM_HTML.name),
@@ -176,20 +178,20 @@ const HtmlGenerator = struct {
                                 1 => "secondary",
                                 else => "accent",
                             },
-                            try std.fmt.allocPrint(self.gpa, "{d}", .{i + 1}),
+                            try std.fmt.allocPrint(self.arena, "{d}", .{i + 1}),
                             text,
                         },
                     );
-                    try acc.appendSlice(self.gpa, item_html);
+                    try list_content.appendSlice(self.arena, item_html);
                 },
                 .list => |sublist| {
                     const item_html = try self.generateList(sublist);
-                    try acc.appendSlice(self.gpa, item_html);
+                    try list_content.appendSlice(self.arena, item_html);
                 },
             }
         }
         const html = try TemplateManager.replacePlaceholders(
-            self.gpa,
+            self.arena,
             switch (list.kind) {
                 .ordered => try self.template_manager.get(tmpl.TMPL_ORDERED_LIST_HTML.name),
                 .unordered => try self.template_manager.get(tmpl.TMPL_UNORDERED_LIST_HTML.name),
@@ -201,7 +203,7 @@ const HtmlGenerator = struct {
                     0 => "normal",
                     else => "nested",
                 },
-                try acc.toOwnedSlice(self.gpa),
+                list_content.items,
                 switch (list.depth) {
                     0 => "1",
                     1 => "2",
@@ -211,9 +213,10 @@ const HtmlGenerator = struct {
         );
         return html;
     }
+
     fn generateDividerType(self: *@This(), dtype: Node.DividerType) ![]u8 {
         const final_html = try TemplateManager.replacePlaceholders(
-            self.gpa,
+            self.arena,
             "<hr class=\"divider {{variant}}\">",
             &[_][]const u8{"{{variant}}"},
             &[_][]const u8{switch (dtype) {
@@ -227,27 +230,32 @@ const HtmlGenerator = struct {
 
     fn generateBlockquote(self: *@This(), bq: Node.Blockquote) ![]u8 {
         var iter = std.mem.splitAny(u8, bq.content, "\n");
-        var acc: ArrayList(u8) = .empty;
+        var bq_content: ArrayList(u8) = .empty;
 
         if (bq.kind != .normal) {
-            try acc.appendSlice(self.gpa, try std.fmt.allocPrint(self.gpa, "<strong>{s}</strong>\n", .{@tagName(bq.kind)}));
+            try bq_content.appendSlice(self.arena, "<strong>");
+            try bq_content.appendSlice(self.arena, @tagName(bq.kind));
+            try bq_content.appendSlice(self.arena, "</strong>\n");
         }
+
         while (iter.next()) |line| {
             if (mem.trim(u8, line, " \t\r").len == 0) continue;
-            const text = try MarkdownInlineStyler.apply(self.gpa, line, self.template_manager);
-            try acc.appendSlice(self.gpa, try std.fmt.allocPrint(self.gpa, "<p>{s}<p>", .{text}));
+            const text = try InlineStyler.apply(self.arena, line, self.template_manager, self.args);
+            try bq_content.appendSlice(self.arena, "<p>");
+            try bq_content.appendSlice(self.arena, text);
+            try bq_content.appendSlice(self.arena, "</p>");
         }
 
         const html = try TemplateManager.replacePlaceholders(
-            self.gpa,
+            self.arena,
             try self.template_manager.get(tmpl.TMPL_BLOCK_QUOTE_HTML.name),
             &[_][]const u8{ "{{variant}}", "{{content}}" },
-            &[_][]const u8{ @tagName(bq.kind), try acc.toOwnedSlice(self.gpa) },
+            &[_][]const u8{ @tagName(bq.kind), try bq_content.toOwnedSlice(self.arena) },
         );
         return html;
     }
 
-    fn generateMagicMarker(self: *@This(), marker: Node.MagicMarker) ![]u8 {
+    fn generateMagicMarker(self: *@This(), marker: Node.MagicMarker) ![]const u8 {
         if (mem.eql(u8, marker.name, tmpl.MAGIC_BLOG_LIST)) {
             return try self.generateBlogList(marker);
         }
@@ -256,7 +264,7 @@ const HtmlGenerator = struct {
         }
         if (mem.eql(u8, marker.name, tmpl.MAGIC_GRID_START)) {
             const html = try TemplateManager.replacePlaceholders(
-                self.gpa,
+                self.arena,
                 try self.template_manager.get(tmpl.TMPL_GRID_START_HTML.name),
                 &[_][]const u8{"{{count}}"},
                 &[_][]const u8{marker.args.?},
@@ -264,7 +272,7 @@ const HtmlGenerator = struct {
             return html;
         }
         if (mem.eql(u8, marker.name, tmpl.MAGIC_GRID_END)) {
-            return self.gpa.dupe(u8, try self.template_manager.get(tmpl.TMPL_GRID_END_HTML.name));
+            return try self.template_manager.get(tmpl.TMPL_GRID_END_HTML.name);
         }
         std.log.err("unknown magic marker -- `{s}`", .{marker.name});
         return Error.UnknownMagicMarker;
@@ -275,37 +283,45 @@ const HtmlGenerator = struct {
 
         const blog_list = self.groups.get(self.document.file_path) orelse return "";
 
-        var list_accum = std.io.Writer.Allocating.init(self.gpa);
+        var list_accum: ArrayList(u8) = .empty;
+
         // TODO(seg4lt) - need to sort by index, but let's do that later
         for (blog_list.items, 0..) |info, i| {
-            const link = try std.fmt.allocPrint(self.gpa, "/{s}/{s}.html", .{ info.file_path, info.file_name[0 .. info.file_name.len - 3] }); // remove .md
-            defer self.gpa.free(link);
+            const link = try std.fmt.allocPrint(
+                self.arena,
+                "{s}/{s}/{s}.html",
+                .{
+                    self.args.web_root,
+                    info.file_path,
+                    info.file_name[0 .. info.file_name.len - 3], // remove `.md`
+                },
+            );
 
             const item_link = try TemplateManager.replacePlaceholders(
-                self.gpa,
+                self.arena,
                 try self.template_manager.get(tmpl.TMPL_BLOG_SERIES_TOC_ITEM_HTML.name),
                 &[_][]const u8{ "{{variant}}", "{{number}}", "{{link}}", "{{title}}", "{{date}}" },
 
                 &[_][]const u8{
                     "primary",
-                    try std.fmt.allocPrint(self.gpa, "{d}", .{i + 1}),
+                    try std.fmt.allocPrint(self.arena, "{d}", .{i + 1}),
                     link,
                     info.frontmatter.title,
                     info.frontmatter.date,
                 },
             );
-
-            try list_accum.writer.print("{s}\n", .{item_link});
+            try list_accum.appendSlice(self.arena, item_link);
+            try list_accum.appendSlice(self.arena, "\n");
         }
         const blog_series_html = try TemplateManager.replacePlaceholders(
-            self.gpa,
+            self.arena,
             try self.template_manager.get(tmpl.TMPL_ORDERED_LIST_HTML.name),
             &[_][]const u8{ "{{variant}}", "{{items}}", "{{depth}}" },
-            &[_][]const u8{ "normal", try list_accum.toOwnedSlice(), "1" },
+            &[_][]const u8{ "normal", list_accum.items, "1" },
         );
 
         const with_wrapper = try TemplateManager.replacePlaceholders(
-            self.gpa,
+            self.arena,
             try self.template_manager.get(tmpl.TMPL_CARD_HTML.name),
             &[_][]const u8{ "{{variant}}", "{{title}}", "{{content}}" },
             &[_][]const u8{ "secondary", "Table of Content", blog_series_html },
@@ -318,39 +334,45 @@ const HtmlGenerator = struct {
         _ = marker;
         const blog_list = self.groups.get("blog") orelse return "";
 
-        var list_accum = std.io.Writer.Allocating.init(self.gpa);
+        var list_accum: ArrayList(u8) = .empty;
         // TODO(seg4lt) - need to sort by date desc, but let's do that later
         for (blog_list.items) |info| {
-            const link = try std.fmt.allocPrint(self.gpa, "/{s}/{s}.html", .{ info.file_path, info.file_name[0 .. info.file_name.len - 3] }); // remove .md
-            defer self.gpa.free(link);
+            const link = try std.fmt.allocPrint(
+                self.arena,
+                "{s}/{s}/{s}.html",
+                .{
+                    self.args.web_root,
+                    info.file_path,
+                    info.file_name[0 .. info.file_name.len - 3], // remove `.md`
+                },
+            );
             const item_html = try TemplateManager.replacePlaceholders(
-                self.gpa,
+                self.arena,
                 try self.template_manager.get(tmpl.TMPL_BLOG_LIST_ITEM_HTML.name),
                 &[_][]const u8{ "{{link}}", "{{title}}", "{{desc}}", "{{date}}" },
                 &[_][]const u8{ link, info.frontmatter.title, info.frontmatter.description, info.frontmatter.date },
             );
-            defer self.gpa.free(item_html);
-            try list_accum.writer.print("{s}\n", .{item_html});
+            try list_accum.appendSlice(self.arena, item_html);
+            try list_accum.appendSlice(self.arena, "\n");
         }
         const blog_list_html = try TemplateManager.replacePlaceholders(
-            self.gpa,
+            self.arena,
             try self.template_manager.get(tmpl.TMPL_CARD_HTML.name),
             &[_][]const u8{ "{{title}}", "{{variant}}", "{{content}}" },
-            &[_][]const u8{ "Recent Blogs", "primary", try list_accum.toOwnedSlice() },
+            &[_][]const u8{ "Recent Blogs", "primary", list_accum.items },
         );
         return blog_list_html;
     }
 
     fn generateCodeBlock(self: *@This(), code_block: Node.CodeBlock) ![]u8 {
         const class_attr = if (code_block.language) |lang|
-            try std.fmt.allocPrint(self.gpa, " class=\"language-{s}\"", .{lang})
+            try std.fmt.allocPrint(self.arena, " class=\"language-{s}\"", .{lang})
         else
             "";
-        defer self.gpa.free(class_attr);
 
         const tmpl_str = try self.template_manager.get(tmpl.TMPL_CODE_BLOCK_HTML.name);
         const code_html = try TemplateManager.replacePlaceholders(
-            self.gpa,
+            self.arena,
             tmpl_str,
             &[_][]const u8{ "{{class}}", "{{content}}" },
             &[_][]const u8{ class_attr, code_block.content },
@@ -360,27 +382,20 @@ const HtmlGenerator = struct {
 
     fn generateParagraph(self: *@This(), p_content: []const u8) ![]u8 {
         if (p_content.len == 0) return "";
-
-        // image already handled in inline styler
-        if (p_content[0] == '!') return self.gpa.dupe(u8, p_content);
-
-        const text = try MarkdownInlineStyler.apply(self.gpa, p_content, self.template_manager);
-
-        return std.fmt.allocPrint(self.gpa,
-            \\ <p>{s}</p>
-        , .{text});
+        const text = try InlineStyler.apply(self.arena, p_content, self.template_manager, self.args);
+        return std.fmt.allocPrint(self.arena, "<p>{s}</p>\n", .{text});
     }
 
     fn generateHeading(self: *@This(), node: Node) ![]u8 {
         const unprocessed_text = switch (node) {
             .h1, .h2, .h3, .h4 => |text| text,
-            else => std.debug.panic("** bug ** not reachable - only heading should reach here", .{}),
+            else => return common.GlobalError.UnrecoverablePanic,
         };
-        const text = try MarkdownInlineStyler.apply(self.gpa, unprocessed_text, self.template_manager);
+        const text = try InlineStyler.apply(self.arena, unprocessed_text, self.template_manager, self.args);
 
         const tmpl_str = try self.template_manager.get(tmpl.TMPL_HEADING_HTML.name);
         const final_html = try TemplateManager.replacePlaceholders(
-            self.gpa,
+            self.arena,
             tmpl_str,
             &[_][]const u8{ "{{level}}", "{{content}}" },
             &[_][]const u8{ switch (node) {
@@ -394,20 +409,22 @@ const HtmlGenerator = struct {
     }
 };
 
-const MarkdownInlineStyler = struct {
+const InlineStyler = struct {
     source: []const u8,
     pos: usize,
-    acc: ArrayList(u8),
+    processed_content: ArrayList(u8),
     tm: *TemplateManager,
-    allocator: Allocator,
+    args: *const AppArgs,
+    arena: Allocator,
 
-    pub fn apply(allocator: Allocator, source: []const u8, tm: *TemplateManager) ![]u8 {
+    pub fn apply(arena: Allocator, source: []const u8, tm: *TemplateManager, args: *const AppArgs) ![]u8 {
         var self: @This() = .{
             .source = source,
             .pos = 0,
-            .acc = .empty,
+            .processed_content = .empty,
             .tm = tm,
-            .allocator = allocator,
+            .arena = arena,
+            .args = args,
         };
         return self.run();
     }
@@ -426,10 +443,10 @@ const MarkdownInlineStyler = struct {
             if (try self.processHighlight()) continue;
 
             // Regular character
-            try self.acc.append(self.allocator, self.source[self.pos]);
+            try self.processed_content.append(self.arena, self.source[self.pos]);
             self.advance(1);
         }
-        return try self.acc.toOwnedSlice(self.allocator);
+        return self.processed_content.items;
     }
 
     fn processHighlight(self: *@This()) !bool {
@@ -459,8 +476,8 @@ const MarkdownInlineStyler = struct {
         }
         self.advance(1); // =
 
-        const highlight_html = try std.fmt.allocPrint(self.allocator, "<mark class=\"highlight {s}-mark\">{s}</mark>", .{ hl_type, highlight_text });
-        try self.acc.appendSlice(self.allocator, highlight_html);
+        const highlight_html = try std.fmt.allocPrint(self.arena, "<mark class=\"highlight {s}-mark\">{s}</mark>", .{ hl_type, highlight_text });
+        try self.processed_content.appendSlice(self.arena, highlight_html);
         return true;
     }
 
@@ -480,8 +497,8 @@ const MarkdownInlineStyler = struct {
         const bold_italic_text = self.source[text_pos_start..self.pos];
         self.advance(3); // *** or ___
 
-        const bold_italic_html = try std.fmt.allocPrint(self.allocator, "<strong class=\"bold-italic\"><em class=\"italic\">{s}</em></strong>", .{bold_italic_text});
-        try self.acc.appendSlice(self.allocator, bold_italic_html);
+        const bold_italic_html = try std.fmt.allocPrint(self.arena, "<strong class=\"bold-italic\"><em class=\"italic\">{s}</em></strong>", .{bold_italic_text});
+        try self.processed_content.appendSlice(self.arena, bold_italic_html);
         return true;
     }
 
@@ -499,8 +516,8 @@ const MarkdownInlineStyler = struct {
         const italic_text = self.source[text_pos_start..self.pos];
         self.advance(1); // * or _
 
-        const italic_html = try std.fmt.allocPrint(self.allocator, "<em class=\"italic\">{s}</em>", .{italic_text});
-        try self.acc.appendSlice(self.allocator, italic_html);
+        const italic_html = try std.fmt.allocPrint(self.arena, "<em class=\"italic\">{s}</em>", .{italic_text});
+        try self.processed_content.appendSlice(self.arena, italic_html);
         return true;
     }
 
@@ -519,8 +536,8 @@ const MarkdownInlineStyler = struct {
         const bold_text = self.source[text_pos_start..self.pos];
         self.advance(2); // ** or __
 
-        const bold_html = try std.fmt.allocPrint(self.allocator, "<strong class=\"bold\">{s}</strong>", .{bold_text});
-        try self.acc.appendSlice(self.allocator, bold_html);
+        const bold_html = try std.fmt.allocPrint(self.arena, "<strong class=\"bold\">{s}</strong>", .{bold_text});
+        try self.processed_content.appendSlice(self.arena, bold_html);
         return true;
     }
 
@@ -537,8 +554,8 @@ const MarkdownInlineStyler = struct {
         const strike_text = self.source[text_pos_start..self.pos];
         self.advance(2); // ~~
 
-        const strike_html = try std.fmt.allocPrint(self.allocator, "<del class=\"strikethrough\">{s}</del>", .{strike_text});
-        try self.acc.appendSlice(self.allocator, strike_html);
+        const strike_html = try std.fmt.allocPrint(self.arena, "<del class=\"strikethrough\">{s}</del>", .{strike_text});
+        try self.processed_content.appendSlice(self.arena, strike_html);
         return true;
     }
 
@@ -552,13 +569,13 @@ const MarkdownInlineStyler = struct {
         while (self.peek() != '`' and !self.isAtEnd()) {
             self.advance(1);
         }
-        const code_text = try self.allocator.dupe(u8, self.source[code_pos_start..self.pos]);
+        const code_text = self.source[code_pos_start..self.pos];
         self.advance(1); // `
 
-        const escaped_code_text = try escapeHtml(self.allocator, code_text);
+        const escaped_code_text = try escapeHtml(self.arena, code_text);
 
-        const code_html = try std.fmt.allocPrint(self.allocator, "<code class=\"inline-code\">{s}</code>", .{escaped_code_text});
-        try self.acc.appendSlice(self.allocator, code_html);
+        const code_html = try std.fmt.allocPrint(self.arena, "<code class=\"inline-code\">{s}</code>", .{escaped_code_text});
+        try self.processed_content.appendSlice(self.arena, code_html);
         return true;
     }
 
@@ -593,7 +610,7 @@ const MarkdownInlineStyler = struct {
 
         if (self.peek() != '(') {
             std.log.err("invalid link syntax found", .{});
-            try self.acc.appendSlice(self.allocator, self.source[original_start..self.pos]);
+            try self.processed_content.appendSlice(self.arena, self.source[original_start..self.pos]);
             return true;
         }
         self.advance(1); // (
@@ -602,17 +619,39 @@ const MarkdownInlineStyler = struct {
         while (self.peek() != ')' and !self.isAtEnd()) {
             self.advance(1);
         }
-        const url = self.source[url_pos_start..self.pos];
+
+        var url_type: enum { internal, external } = .internal;
+        const url = blk: {
+            const maybe_url = self.source[url_pos_start..self.pos];
+            if (maybe_url[0] == '/' or maybe_url[0] == '.') {
+                url_type = .internal;
+                if (maybe_url[0] == '/') {
+                    break :blk try std.fmt.allocPrint(self.arena, "{s}{s}", .{ self.args.web_root, maybe_url });
+                }
+            } else {
+                url_type = .external;
+            }
+            break :blk maybe_url;
+        };
         self.advance(1); // )
 
         const link_html = try TemplateManager.replacePlaceholders(
-            self.allocator,
+            self.arena,
             try self.tm.get(tmpl.TMPL_TEXT_LINK_HTML.name),
-            &[_][]const u8{ "{{link}}", "{{text}}" },
-            &[_][]const u8{ url, link_text },
+            &[_][]const u8{
+                "{{link}}",
+                "{{text}}",
+                "{{target}}",
+            },
+            &[_][]const u8{
+                url, link_text, switch (url_type) {
+                    .internal => "target=\"_self\"",
+                    .external => "target=\"_blank\"",
+                },
+            },
         );
 
-        try self.acc.appendSlice(self.allocator, link_html);
+        try self.processed_content.appendSlice(self.arena, link_html);
         return true;
     }
 
@@ -631,7 +670,7 @@ const MarkdownInlineStyler = struct {
 
         if (self.peek() != '(') {
             std.log.err("invalid image syntax found", .{});
-            try self.acc.appendSlice(self.allocator, self.source[original_start..self.pos]);
+            try self.processed_content.appendSlice(self.arena, self.source[original_start..self.pos]);
             return true;
         }
         self.advance(1); // (
@@ -640,19 +679,25 @@ const MarkdownInlineStyler = struct {
         while (self.peek() != ')' and !self.isAtEnd()) {
             self.advance(1);
         }
-        const url = self.source[url_pos_start..self.pos];
+        const url = blk: {
+            const maybe_url = self.source[url_pos_start..self.pos];
+            if (std.mem.startsWith(u8, maybe_url, "/")) {
+                break :blk try std.fmt.allocPrint(self.arena, "{s}{s}", .{ self.args.web_root, maybe_url });
+            }
+            break :blk maybe_url;
+        };
         self.advance(1); // )
 
-        const img_html = try std.fmt.allocPrint(self.allocator, "<img src=\"{s}\" alt=\"{s}\">", .{ url, alt_text });
+        const img_html = try std.fmt.allocPrint(self.arena, "<img src=\"{s}\" alt=\"{s}\">", .{ url, alt_text });
 
         const image_card = try TemplateManager.replacePlaceholders(
-            self.allocator,
+            self.arena,
             try self.tm.get(tmpl.TMPL_CARD_HTML.name),
             &[_][]const u8{ "{{title}}", "{{variant}}", "{{content}}" },
             &[_][]const u8{ alt_text, "primary", img_html },
         );
 
-        try self.acc.appendSlice(self.allocator, image_card);
+        try self.processed_content.appendSlice(self.arena, image_card);
         return true;
     }
 
@@ -687,6 +732,8 @@ const tmpl = @import("tmpl.zig");
 const TemplateManager = @import("TemplateManager.zig");
 const common = @import("common.zig");
 const Parser = @import("Parser.zig");
+const MemCtx = common.MemCtx;
+const AppArgs = common.AppArgs;
 
 const MAX_FILE_SIZE = common.MAX_FILE_SIZE;
 const Allocator = std.mem.Allocator;

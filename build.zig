@@ -40,8 +40,9 @@ pub fn build(b: *std.Build) !void {
     } else {
         run_cmd.addArg("--app_name=m2h");
         run_cmd.addArg("--app_subtitle=Markdown to HTML generator written in Zig");
-        run_cmd.addArg("--base_path=example");
-        run_cmd.addArg("--output_path=docs");
+        run_cmd.addArg("--md_base_path=example");
+        run_cmd.addArg("--output_base_path=markdown-to-html");
+        run_cmd.addArg("--web_root=/markdown-to-html");
     }
 
     const exe_tests = b.addTest(.{

@@ -3,8 +3,8 @@
     <head>
         <meta charset="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-        <title>Project Page - Updated</title>
-        <link rel="stylesheet" href="/styles.css" />
+        <title>Links Demo - Updated</title>
+        <link rel="stylesheet" href="/markdown-to-html/styles.css" />
         <link
             rel="stylesheet"
             href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/styles/github-dark.min.css"
@@ -31,16 +31,16 @@
                 <p class="main-subtitle">Markdown to HTML generator written in Zig</p>
                 <nav class="main-nav">
     <ul class="nav-links">
-        <li><a href="/" class="button-link">home</a>
+        <li><a href="/markdown-to-html/" class="button-link" {{target}}>Home</a>
 </li>
 
-<li><a href="/about" class="button-link">about</a>
+<li><a href="/markdown-to-html/about" class="button-link" {{target}}>about</a>
 </li>
 
-<li><a href="/blog" class="button-link">blog</a>
+<li><a href="/markdown-to-html/blog" class="button-link" {{target}}>blog</a>
 </li>
 
-<li><a href="/project" class="button-link">project</a>
+<li><a href="/markdown-to-html/project" class="button-link" {{target}}>project</a>
 </li>
 
     </ul>
@@ -48,10 +48,61 @@
 
             </header>
             <div class="main-content">
-<h1>Prjects Page</h1>
+<h1>Links Demo</h1>
 
 
-<h2>My Projects</h2>
+<h2>External Link</h2>
+
+
+<p>This is an example of link that goes outside the site: <a href="https://www.google.com" class="text-link" target="_blank">Google</a>
+</p>
+
+
+<h2>Internal Relative to current folder Link</h2>
+
+
+<p>Relative to current folder link: <a href="./inline_styles.html" class="text-link" target="_self">Inline Style Examples</a>
+</p>
+
+
+<h2>Internal but root link</h2>
+
+
+<p>Root link: <a href="/markdown-to-html/project" class="text-link" target="_self">Project</a>
+</p>
+
+
+<h2>Image Links</h2>
+
+
+<div class="grid grid-2">
+
+
+<p><section class="card">
+    <!-- variant == primary, accent, secondary -->
+    <div class="card-header primary-header">
+        <h2 class="card-title">External</h2>
+    </div>
+    <div class="card-content"><img src="https://placehold.co/600x300" alt="External"></div>
+</section>
+ <section class="card">
+    <!-- variant == primary, accent, secondary -->
+    <div class="card-header primary-header">
+        <h2 class="card-title">Internal Root</h2>
+    </div>
+    <div class="card-content"><img src="/markdown-to-html/__assets/gen_image.png" alt="Internal Root"></div>
+</section>
+ <section class="card">
+    <!-- variant == primary, accent, secondary -->
+    <div class="card-header primary-header">
+        <h2 class="card-title">Internal Relative</h2>
+    </div>
+    <div class="card-content"><img src="../__assets/gen_image.png" alt="Internal Relative"></div>
+</section>
+</p>
+
+
+</div>
 
 </div>
             <footer class="main-footer">

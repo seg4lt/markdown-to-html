@@ -1,58 +1,37 @@
-// TODO(seg4lt)
-// - Using gpa, for now, but need to work with arena. Don't know life time well yet!!
-// - Maybe we don't even care about memory as this is not long running process?
-//      - But what if we add server later for search??
 pub fn main() !void {
-    const gpa, const deinit = getAllocator();
-    _ = deinit;
-    // defer if (deinit) {
-    //     const leak_status = debug_allocator.deinit();
-    //     if (builtin.mode == .Debug) std.log.debug("----- LEAK STATUS: {s} ----- ", .{@tagName(leak_status)});
-    // };
+    var mem_ctx = try MemCtx.init();
+    // Don't care about leak.. OS will reclaim all memory
+    // defer mem_ctx.deinit();
+
     const args = claptain.parse(Clap, .{}) catch std.process.exit(1);
 
     if (args.export_default_tmpl) {
-        try exportDefaultTmpl(gpa);
+        try exportDefaultTmpl(mem_ctx.scratch, &args);
         std.process.exit(0);
     }
 
-    var tmpl_manager = TemplateManager.init(gpa, args.base_path, args.tmpl_path, args.app_name);
-    defer tmpl_manager.map.deinit();
-    try tmpl_manager.copyDefaultFiles(args.output_path);
+    var tm: TemplateManager = .init(&mem_ctx, &args);
+    try tm.copyDefaultFiles();
 
     // I am parsing all document and keeping them on memory, this might not be ideal
     // but if we need we can implement just frontmatter parsing on 1st phase and
     // on 2nd phase we can parse whole document and inject stuffs
     // Mainly needed for blog list and blog series support
-    const docs = try Parser.parseFromDirPath(gpa, args.base_path, args.tmpl_path);
+    const docs = try Parser.parseFromDirPath(&mem_ctx, args.md_base_path, args.tmpl_base_path);
 
-    try HtmlGenerator.generateAll(gpa, &docs, args.app_name, args.app_subtitle, args.output_path, &tmpl_manager);
+    try HtmlGenerator.generateAll(&mem_ctx, &docs, &tm, &args);
 }
 
-const Clap = struct {
-    app_name: []const u8 = "m2h",
-    app_subtitle: []const u8 = "Markdown to HTML generator written in Zig",
-    base_path: []const u8 = "example",
-    output_path: []const u8 = "docs",
-    tmpl_path: []const u8 = "__templates",
-    export_default_tmpl: bool = false,
-};
+fn exportDefaultTmpl(arena: Allocator, args: *const Clap) !void {
+    const output_dir = try fs.path.join(arena, &[_][]const u8{ args.md_base_path, "__templates" });
 
-fn exportDefaultTmpl(gpa: Allocator) !void {
-    const args = claptain.parse(Clap, .{}) catch std.process.exit(1);
-    const output_dir = try std.fs.path.join(gpa, &[_][]const u8{ args.base_path, "__templates" });
-    defer gpa.free(output_dir);
-
-    // Create the output directory
-    std.fs.cwd().makePath(output_dir) catch |err| {
+    fs.cwd().makePath(output_dir) catch |err| {
         if (err != error.PathAlreadyExists) return err;
     };
 
     for (tmpl.TEMPLATES) |template| {
-        const path = try std.fs.path.join(gpa, &[_][]const u8{ output_dir, template.name });
-        defer gpa.free(path);
-
-        const file = try std.fs.cwd().createFile(path, .{});
+        const path = try fs.path.join(arena, &[_][]const u8{ output_dir, template.name });
+        const file = try fs.cwd().createFile(path, .{});
         defer file.close();
 
         try file.writeAll(template.content);
@@ -62,13 +41,6 @@ fn exportDefaultTmpl(gpa: Allocator) !void {
     std.log.info("All default templates written to {s}/", .{output_dir});
 }
 
-fn getAllocator() struct { Allocator, bool } {
-    return switch (builtin.mode) {
-        .Debug, .ReleaseSafe => .{ debug_allocator.allocator(), true },
-        .ReleaseSmall, .ReleaseFast => .{ std.heap.smp_allocator, false },
-    };
-}
-
 const std = @import("std");
 const claptain = @import("claptain");
 const builtin = @import("builtin");
@@ -76,7 +48,9 @@ const tmpl = @import("tmpl.zig");
 const TemplateManager = @import("TemplateManager.zig");
 const Parser = @import("Parser.zig");
 const HtmlGenerator = @import("HtmlGenerator.zig");
+const MemCtx = @import("common.zig").MemCtx;
+const Clap = @import("common.zig").AppArgs;
 
 const Allocator = std.mem.Allocator;
 const ArrayList = std.ArrayList;
-var debug_allocator: std.heap.DebugAllocator(.{}) = .init;
+const fs = std.fs;

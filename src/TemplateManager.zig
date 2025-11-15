@@ -1,33 +1,25 @@
-gpa: Allocator,
-map: std.StringHashMap([]const u8),
-base_path: []const u8,
-tmpl_path: []const u8,
-app_name: []const u8,
-
+mem_ctx: *MemCtx,
+template_cache: std.StringHashMap([]const u8),
+args: *const Clap,
 const Self = @This();
 
 const COPY_FILES = [_][]const u8{
     "styles.css",
 };
 
-pub fn init(gpa: Allocator, base_path: []const u8, tmpl_path: []const u8, app_name: []const u8) Self {
+pub fn init(mem_ctx: *MemCtx, args: *const Clap) Self {
     return .{
-        .gpa = gpa,
-        .base_path = base_path,
-        .tmpl_path = tmpl_path,
-        .app_name = app_name,
-        .map = std.StringHashMap([]const u8).init(gpa),
+        .mem_ctx = mem_ctx,
+        .template_cache = std.StringHashMap([]const u8).init(mem_ctx.global),
+        .args = args,
     };
-}
-pub fn deinit(self: *Self) void {
-    self.map.deinit();
 }
 
 pub fn get(self: *Self, tmpl_name: []const u8) ![]const u8 {
-    if (self.map.get(tmpl_name)) |tmpl_content| {
+    if (self.template_cache.get(tmpl_name)) |tmpl_content| {
         return tmpl_content;
     }
-    const file_content = try findOverride(self.gpa, self.base_path, self.tmpl_path, tmpl_name) orelse blk: {
+    const file_content = try self.findOverride(tmpl_name) orelse blk: {
         for (tmpl.TEMPLATES) |template| {
             if (mem.eql(u8, template.name, tmpl_name)) {
                 break :blk template.content;
@@ -37,152 +29,168 @@ pub fn get(self: *Self, tmpl_name: []const u8) ![]const u8 {
         return error.TemplateNotFound;
     };
 
-    try self.map.put(tmpl_name, file_content);
+    try self.template_cache.put(tmpl_name, file_content);
     return file_content;
 }
 
-fn findOverride(gpa: Allocator, base_path: []const u8, tmpl_path: []const u8, tmpl_name: []const u8) !?[]const u8 {
-    const file_path = try std.fs.path.join(gpa, &[_][]const u8{
-        base_path,
-        tmpl_path,
+fn findOverride(self: *Self, tmpl_name: []const u8) !?[]const u8 {
+    const file_path = try std.fs.path.join(self.mem_ctx.scratch, &[_][]const u8{
+        self.args.md_base_path,
+        self.args.tmpl_base_path,
         tmpl_name,
     });
-    defer gpa.free(file_path);
 
-    const file_content = std.fs.cwd().readFileAlloc(gpa, file_path, common.MAX_FILE_SIZE) catch |err| {
-        if (err == error.FileNotFound) return null;
+    const file_content = std.fs.cwd().readFileAlloc(self.mem_ctx.global, file_path, common.MAX_FILE_SIZE) catch |err| {
+        if (err == error.FileNotFound) {
+            std.log.debug("No override found for {s} on `{s}`", .{ tmpl_name, file_path });
+            return null;
+        }
         return err;
     };
-    std.log.debug("Using override for {s}", .{tmpl_name});
+    std.log.info("Using override for {s}", .{tmpl_name});
     return file_content;
 }
 
 pub fn getMainNav(self: *Self) ![]const u8 {
     const NAV_MENU_KEY = "__main_nav__";
 
-    if (self.map.get(NAV_MENU_KEY)) |nav| {
+    if (self.template_cache.get(NAV_MENU_KEY)) |nav| {
         return nav;
     }
 
-    var dir = try std.fs.cwd().openDir(self.base_path, .{ .iterate = true });
+    var dir = try std.fs.cwd().openDir(self.args.md_base_path, .{ .iterate = true });
     defer dir.close();
-    var top_level_dirs: ArrayList(struct { name: []const u8, link: []const u8 }) = .empty;
-    defer top_level_dirs.deinit(self.gpa);
-    try top_level_dirs.append(self.gpa, .{ .name = "home", .link = "" });
+
+    var top_level_dirs: ArrayList([]const u8) = .empty;
+    try top_level_dirs.append(self.mem_ctx.scratch, "__home__");
 
     var it = dir.iterate();
+
     while (try it.next()) |dir_entry| {
-        if (dir_entry.kind == .directory and !mem.eql(u8, dir_entry.name, self.tmpl_path) and !mem.startsWith(u8, dir_entry.name, "__")) {
-            try top_level_dirs.append(self.gpa, .{ .name = dir_entry.name, .link = dir_entry.name });
-        }
+        if (dir_entry.kind != .directory) continue;
+        if (mem.eql(u8, dir_entry.name, self.args.tmpl_base_path)) continue;
+        if (mem.startsWith(u8, dir_entry.name, "__")) continue;
+
+        try top_level_dirs.append(self.mem_ctx.scratch, dir_entry.name);
     }
 
-    // Build nav items
-    var nav_items_acc = std.io.Writer.Allocating.init(self.gpa);
-    defer nav_items_acc.deinit();
+    var nav_items_acc: ArrayList(u8) = .empty;
     for (top_level_dirs.items, 0..) |dir_name, i| {
-        const link = try std.fmt.allocPrint(self.gpa, "/{s}", .{dir_name.link});
-        defer self.gpa.free(link);
+        const is_home = mem.eql(u8, dir_name, "__home__");
+        const link = try std.fmt.allocPrint(self.mem_ctx.scratch, "{s}/{s}", .{ self.args.web_root, if (is_home) "" else dir_name });
 
         const nav_link = try replacePlaceholders(
-            self.gpa,
+            self.mem_ctx.scratch,
             try self.get(tmpl.TMPL_BUTTON_LINK_HTML.name),
             &[_][]const u8{ "{{link}}", "{{text}}" },
-            &[_][]const u8{ link, dir_name.name },
+            &[_][]const u8{ link, if (is_home) "Home" else dir_name },
         );
-        defer self.gpa.free(nav_link);
 
         const nav_item = try replacePlaceholders(
-            self.gpa,
+            self.mem_ctx.scratch,
             try self.get(tmpl.TMPL_MAIN_NAV_ITEM_HTML.name),
             &[_][]const u8{"{{item}}"},
             &[_][]const u8{nav_link},
         );
-        defer self.gpa.free(nav_item);
 
-        try nav_items_acc.writer.writeAll(nav_item);
+        try nav_items_acc.appendSlice(self.mem_ctx.scratch, nav_item);
         if (i < top_level_dirs.items.len - 1) {
-            try nav_items_acc.writer.writeAll("\n");
+            try nav_items_acc.appendSlice(self.mem_ctx.scratch, "\n");
         }
     }
 
-    const nav_items = try nav_items_acc.toOwnedSlice();
-    defer self.gpa.free(nav_items);
-
     const nav_menu = try replacePlaceholders(
-        self.gpa,
+        self.mem_ctx.scratch,
         try self.get(tmpl.TMPL_MAIN_NAV_HTML.name),
         &[_][]const u8{"{{nav_items}}"},
-        &[_][]const u8{nav_items},
+        &[_][]const u8{nav_items_acc.items},
     );
-    try self.map.put(NAV_MENU_KEY, nav_menu);
+    // once I write replacePlaceholder to not use loop I can just pass in global arena above
+    const nav_menu_global_owned = try self.mem_ctx.global.dupe(u8, nav_menu);
+    try self.template_cache.put(NAV_MENU_KEY, nav_menu_global_owned);
     return nav_menu;
 }
 
-pub fn copyDefaultFiles(self: *Self, output_path: []const u8) !void {
+pub fn copyDefaultFiles(self: *Self) !void {
+    std.fs.cwd().makePath(self.args.output_base_path) catch |err| if (err != error.PathAlreadyExists) return err;
+
     for (COPY_FILES) |file_name| {
-        const src_path = try std.fs.path.join(self.gpa, &[_][]const u8{ self.base_path, self.tmpl_path, file_name });
-        defer self.gpa.free(src_path);
+        const dest_path = try std.fs.path.join(self.mem_ctx.scratch, &[_][]const u8{ self.args.output_base_path, file_name });
 
-        std.fs.cwd().makePath(output_path) catch |err| if (err != error.PathAlreadyExists) return err;
-
-        const dest_path = try std.fs.path.join(self.gpa, &[_][]const u8{ output_path, file_name });
-        defer self.gpa.free(dest_path);
-
-        // TODO(seg4lt)
-        // just created findOverride proc, maybe use that here later
-        const content = std.fs.cwd().readFileAlloc(self.gpa, src_path, MAX_FILE_SIZE) catch |err| {
-            if (err == error.FileNotFound) {
-                std.log.info("Template file {s} not found, using default from tmpl.zig", .{file_name});
-                const default_content = if (mem.eql(u8, file_name, "styles.css"))
-                    tmpl.DEFAULT_STYLES_CSS
-                else
-                    null;
-
-                if (default_content) |content_str| {
-                    const output_file = try std.fs.cwd().createFile(dest_path, .{});
-                    defer output_file.close();
-                    try output_file.writeAll(content_str);
-                } else {
-                    std.log.warn("No default content for {s}, skipping.", .{file_name});
-                }
-                continue;
-            } else {
-                return err;
-            }
-        };
+        const style_text = try self.findOverride(file_name) orelse tmpl.DEFAULT_STYLES_CSS;
         std.log.debug("Using override for {s}", .{"styles.css"});
-        defer self.gpa.free(content);
-
         const output_file = try std.fs.cwd().createFile(dest_path, .{});
         defer output_file.close();
-        try output_file.writeAll(content);
+        try output_file.writeAll(style_text);
     }
+
+    const src_dir_path = try std.fs.path.join(
+        self.mem_ctx.scratch,
+        &[_][]const u8{ self.args.md_base_path, "__assets" },
+    );
+    var src_dir = std.fs.cwd().openDir(src_dir_path, .{ .iterate = true }) catch |err| {
+        if (err == error.FileNotFound) {
+            std.log.info("No __assets directory found at `{s}`", .{src_dir_path});
+            return;
+        }
+        return err;
+    };
+    defer src_dir.close();
+
+    const dest_dir_path = try std.fs.path.join(
+        self.mem_ctx.scratch,
+        &[_][]const u8{ self.args.output_base_path, "__assets" },
+    );
+    std.fs.cwd().makeDir(dest_dir_path) catch |err| if (err != error.PathAlreadyExists) return err;
+
+    var dest_dir = try std.fs.cwd().openDir(dest_dir_path, .{ .iterate = true });
+    defer dest_dir.close();
+
+    try copyRecursive(&src_dir, &dest_dir);
 }
 
-pub fn getTemplate(self: *Self, name: []const u8) ?[]const u8 {
-    if (self.map.get(name)) |template| {
-        return template;
-    }
-    const path = try std.fs.path.join(self.gpa, &[_][]const u8{ self.base_path, self.tmpl_path, name });
-    defer self.gpa.free(path);
+fn copyRecursive(
+    src_dir: *const std.fs.Dir,
+    dest_dir: *const std.fs.Dir,
+) !void {
+    var src_it = src_dir.iterate();
 
-    const content = try std.fs.cwd().readFileAlloc(self.gpa, path, MAX_FILE_SIZE);
-    try self.map.put(name, content);
-    return content;
+    while (try src_it.next()) |entry| {
+        switch (entry.kind) {
+            .file => {
+                try src_dir.copyFile(entry.name, dest_dir.*, entry.name, .{});
+            },
+            .directory => {
+                var new_src_dir = try src_dir.openDir(entry.name, .{ .iterate = true });
+                defer new_src_dir.close();
+
+                try dest_dir.makeDir(entry.name);
+                var new_dest_dir = try dest_dir.openDir(entry.name, .{ .iterate = true });
+                defer new_dest_dir.close();
+
+                try copyRecursive(&new_src_dir, &new_dest_dir);
+            },
+            else => continue,
+        }
+    }
 }
 
 // TODO(seg4lt)
 // Maybe implement proper parser, so we don't use replaceOwned
 // replaceOwned is called multiple times, so it's not efficient
 // If we create our own parser, I think we can do this in one pass
-// Also we don't need to make copy and destroy
-pub fn replacePlaceholders(gpa: Allocator, haystack: []const u8, keys: []const []const u8, values: []const []const u8) ![]u8 {
-    var result = try gpa.dupe(u8, haystack);
+// Also we don't need to make copies and destroy
+pub fn replacePlaceholders(
+    allocator: Allocator,
+    haystack: []const u8,
+    keys: []const []const u8,
+    values: []const []const u8,
+) ![]u8 {
+    var result = try allocator.dupe(u8, haystack);
     for (keys, values) |key, value| {
         const old = result;
-        defer gpa.free(old);
-        result = try std.mem.replaceOwned(u8, gpa, result, key, value);
+        defer allocator.free(old);
+        result = try std.mem.replaceOwned(u8, allocator, result, key, value);
     }
     return result;
 }
@@ -190,6 +198,8 @@ pub fn replacePlaceholders(gpa: Allocator, haystack: []const u8, keys: []const [
 const std = @import("std");
 const tmpl = @import("tmpl.zig");
 const common = @import("common.zig");
+const MemCtx = common.MemCtx;
+const Clap = common.AppArgs;
 
 const MAX_FILE_SIZE = common.MAX_FILE_SIZE;
 const Allocator = std.mem.Allocator;

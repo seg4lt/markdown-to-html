@@ -3,8 +3,8 @@
     <head>
         <meta charset="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-        <title>{{title}} - Updated</title>
-        <link rel="stylesheet" href="{{web_root}}/styles.css" />
+        <title>About Us - Updated</title>
+        <link rel="stylesheet" href="/markdown-to-html/styles.css" />
         <link
             rel="stylesheet"
             href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/styles/github-dark.min.css"
@@ -27,11 +27,30 @@
     <body>
         <div class="global-container">
             <header class="main-header">
-                <h1 class="main-title">{{app_name}}</h1>
-                <p class="main-subtitle">{{app_subtitle}}</p>
-                {{main_nav}}
+                <h1 class="main-title">m2h</h1>
+                <p class="main-subtitle">Markdown to HTML generator written in Zig</p>
+                <nav class="main-nav">
+    <ul class="nav-links">
+        <li><a href="/markdown-to-html/" class="button-link" {{target}}>Home</a>
+</li>
+
+<li><a href="/markdown-to-html/about" class="button-link" {{target}}>about</a>
+</li>
+
+<li><a href="/markdown-to-html/blog" class="button-link" {{target}}>blog</a>
+</li>
+
+<li><a href="/markdown-to-html/project" class="button-link" {{target}}>project</a>
+</li>
+
+    </ul>
+</nav>
+
             </header>
-            <div class="main-content">{{content}}</div>
+            <div class="main-content">
+<h1>About Me</h1>
+
+</div>
             <footer class="main-footer">
                 <div class="container">
                     <p>
