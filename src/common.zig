@@ -2,11 +2,11 @@ pub const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10 MB
 
 pub const AppArgs = struct {
     app_name: []const u8,
-    app_subtitle: []const u8,
+    app_subtitle: []const u8 = "",
     md_base_path: []const u8,
     output_base_path: []const u8,
     tmpl_base_path: []const u8 = "__templates",
-    web_root: []const u8 = "/",
+    web_root: []const u8 = "",
     export_default_tmpl: bool = false,
 
     pub const __claptain_metadata: claptain.Metadata(@This()) = .{
@@ -23,6 +23,7 @@ pub const AppArgs = struct {
 var debug_allocator: std.heap.DebugAllocator(.{}) = .init;
 
 pub const MemCtx = struct {
+    gpa: Allocator,
     global: Allocator,
     scratch: Allocator,
     global_impl: *std.heap.ArenaAllocator,
@@ -40,6 +41,7 @@ pub const MemCtx = struct {
         global_impl.* = std.heap.ArenaAllocator.init(gpa);
 
         return MemCtx{
+            .gpa = gpa,
             .global_impl = global_impl,
             .global = global_impl.allocator(),
             .scratch_impl = scratch_impl,
@@ -52,8 +54,12 @@ pub const MemCtx = struct {
     }
 
     pub fn deinit(self: *@This()) void {
-        self.scratch_impl.reset(.free_all);
-        self.global_impl.reset(.free_all);
+        _ = self.scratch_impl.reset(.free_all);
+        _ = self.global_impl.reset(.free_all);
+
+        self.gpa.destroy(self.global_impl);
+        self.gpa.destroy(self.scratch_impl);
+
         if (builtin.mode == .Debug) {
             const leak_status = debug_allocator.deinit();
             if (builtin.mode == .Debug) {
