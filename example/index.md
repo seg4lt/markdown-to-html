@@ -10,6 +10,8 @@
 
 Markdown to HTML converter written in Zig. Very opinionated and supports only what I need.
 
+[Example of generated site here](https://seg4lt.github.io/markdown-to-html/)
+
 ## Quick Start
 
 ```bash
