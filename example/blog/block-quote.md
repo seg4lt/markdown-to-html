@@ -2,7 +2,7 @@
 {
   "title": "Block Quote Examples",
   "description": "Examples of different block quote types in markdown.",
-  "date": "2024-06-15"
+  "date": "2025-11-10"
 }
 ```
 

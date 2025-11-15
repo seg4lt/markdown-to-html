@@ -2,7 +2,7 @@
 {
   "title": "Inline Style Examples",
   "description": "Examples of different inline styles in markdown.",
-  "date": "2024-06-15"
+  "date": "2025-11-02"
 }
 ```
 

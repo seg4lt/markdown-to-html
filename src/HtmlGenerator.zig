@@ -279,14 +279,37 @@ const HtmlGenerator = struct {
     }
 
     fn generateBlogSeriesTableOfContent(self: *@This(), marker: Node.MagicMarker) ![]u8 {
-        _ = marker;
-
         const blog_list = self.groups.get(self.document.file_path) orelse return "";
 
         var list_accum: ArrayList(u8) = .empty;
 
-        // TODO(seg4lt) - need to sort by index, but let's do that later
-        for (blog_list.items, 0..) |info, i| {
+        const blog_list_sorted_index = try self.arena.alloc(usize, blog_list.items.len);
+        for (blog_list_sorted_index, 0..) |*i, n| i.* = n;
+
+        std.mem.sort(usize, blog_list_sorted_index, blog_list.items, struct {
+            fn lessThan(context: []const DocInfo, a: usize, b: usize) bool {
+                const afm = context[a].frontmatter;
+                const bfm = context[b].frontmatter;
+
+                if (afm.index != null and bfm.index != null) {
+                    return afm.index.? < bfm.index.?;
+                }
+
+                return std.mem.order(u8, context[a].frontmatter.date, context[b].frontmatter.date) == .lt;
+            }
+        }.lessThan);
+        // TODO(seg4lt) maybe for blog series we need to bit smart
+        // you show total of what we want, but where we are in series is middle
+        // if not for long series, table of content will be too long
+        const num_items = blk: {
+            if (marker.args) |arg| {
+                break :blk std.fmt.parseInt(u8, arg, 10) catch blog_list.items.len;
+            }
+            break :blk blog_list.items.len;
+        };
+
+        for (blog_list_sorted_index[0..num_items], 0..) |idx, i| {
+            const info = blog_list.items[idx];
             const link = try std.fmt.allocPrint(
                 self.arena,
                 "{s}/{s}/{s}.html",
@@ -331,12 +354,26 @@ const HtmlGenerator = struct {
     }
 
     fn generateBlogList(self: *@This(), marker: Node.MagicMarker) ![]u8 {
-        _ = marker;
         const blog_list = self.groups.get("blog") orelse return "";
 
+        const blog_list_sorted_index = try self.arena.alloc(usize, blog_list.items.len);
+        for (blog_list_sorted_index, 0..) |*i, n| i.* = n;
+
+        std.mem.sort(usize, blog_list_sorted_index, blog_list.items, struct {
+            fn lessThan(context: []const DocInfo, a: usize, b: usize) bool {
+                return std.mem.order(u8, context[a].frontmatter.date, context[b].frontmatter.date) == .gt;
+            }
+        }.lessThan);
+        const num_items = blk: {
+            if (marker.args) |arg| {
+                break :blk std.fmt.parseInt(u8, arg, 10) catch blog_list.items.len;
+            }
+            break :blk blog_list.items.len;
+        };
+
         var list_accum: ArrayList(u8) = .empty;
-        // TODO(seg4lt) - need to sort by date desc, but let's do that later
-        for (blog_list.items) |info| {
+        for (blog_list_sorted_index[0..num_items]) |idx| {
+            const info = blog_list.items[idx];
             const link = try std.fmt.allocPrint(
                 self.arena,
                 "{s}/{s}/{s}.html",
