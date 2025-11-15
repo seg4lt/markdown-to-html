@@ -18,6 +18,7 @@ pub const Frontmatter = struct {
     title: []const u8,
     description: []const u8,
     date: []const u8,
+    index: ?u8 = null,
 };
 
 pub const Node = union(enum) {

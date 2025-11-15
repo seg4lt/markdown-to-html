@@ -1,12 +1,12 @@
 ```@@frontmatter
 {
-  "title": "Test Series 02",
+  "title": "Test Series 03",
   "description": "This is the second test series markdown file.",
-  "date": "2025-12-16",
-  "index": 4
+  "date": "2025-12-17",
+  "index": 1
 }
 ```
 
-# Test Series 02
+# Test Series 03
 
 {{ @@blog_series_toc }}

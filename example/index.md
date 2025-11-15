@@ -76,7 +76,7 @@ These are special markers you can use in markdown:
 ```
 Generates list of all blog posts with frontmatter like below
 
-{{ @@blog_list }}
+{{ @@blog_list 3 }}
 
 
 ### Blog Series TOC
@@ -133,13 +133,11 @@ Table of Contents
 Each item links to that post. Same folder = series. Thats it.
 
 ## TODO
-- [ ] relative path support
-- [ ] Sort blog content
-- [ ] @@blog_list to support number of blog
-- [ ] gen html should have date based folder structure
+- [ ] blog series add previous and next links
+- [ ] when limiting number of items in blog list, add "show more" link
+  - [ ] show more should take you to place where you can see all posts but with basic pagination
+  - [ ] maybe add blog search feature / local fuzzy search?
+  - [ ] this search can be maybe magic marker and can be added anywhere.
+- [ ] when limiting numbr of items on blog series, show exact items, but if we have older items, show previous two and any other items should be current and new.
 - [ ] Parse table
-- [ ] fix table of content for table series
-- [ ] fix sorting on table of content using index
 - [ ] add support for @@include_html and @@include_html_data for some dynamism - so I don't need to create parser for each type of thing I want to support
-- [ ] ol/ul list template on `__templates` folder so it can be picked up by build script
-- [ ] For quick prototyping I was using gpa everywhere, and not cleaning up memory properly. Fix that !!
