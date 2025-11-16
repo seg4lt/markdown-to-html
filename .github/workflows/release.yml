@@ -24,7 +24,7 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ~/zig
-          key: zig-linux-x86_64-${{ env.ZIG_VERSION }}
+          key: zig-x86_64-linux-${{ env.ZIG_VERSION }}
 
       - name: Download Zig
         if: steps.cache-zig.outputs.cache-hit != 'true'
