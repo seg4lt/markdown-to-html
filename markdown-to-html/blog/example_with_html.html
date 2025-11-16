@@ -1,0 +1,170 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Test page for html content</title>
+        <link rel="stylesheet" href="/markdown-to-html/styles.css" />
+        <link
+            rel="stylesheet"
+            href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/styles/github-dark.min.css"
+        />
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+        <link
+            href="https://fonts.googleapis.com/css2?family=Cascadia+Code:ital,wght@0,200..700;1,200..700&display=swap"
+            rel="stylesheet"
+        />
+        <link
+            href="https://fonts.googleapis.com/css2?family=Geist+Mono:wght@400;700;900&display=swap"
+            rel="stylesheet"
+        />
+        <script
+            defer
+            src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/highlight.min.js"
+        ></script>
+    </head>
+    <body>
+        <div class="global-container">
+            <header class="main-header">
+                <h1 class="main-title">m2h</h1>
+                <p class="main-subtitle">Markdown to HTML generator written in Zig</p>
+                <nav class="main-nav">
+    <ul class="nav-links">
+        <li><a href="/markdown-to-html/" class="button-link" {{target}}>Home</a>
+</li>
+
+<li><a href="/markdown-to-html/about" class="button-link" {{target}}>about</a>
+</li>
+
+<li><a href="/markdown-to-html/blog" class="button-link" {{target}}>blog</a>
+</li>
+
+<li><a href="/markdown-to-html/project" class="button-link" {{target}}>project</a>
+</li>
+
+    </ul>
+</nav>
+
+            </header>
+            <div class="main-content">
+<h2>some js code</h2>
+
+
+<pre class="code-block"><code class="language-jsx">const onUpdateRoomList = (frame) =&gt; {
+  setRoomList(JSON.parse(frame.body))
+}
+
+const onWebSocketConnect = (_stompClient) =&gt; {
+  setStompClient(_stompClient)
+  _stompClient.subscribe(baseDestinationUrl, onUpdateRoomList)
+}
+
+useEffect(() =&gt; {
+    const _stompClient = Stomp.over(SockJS(wsConnectUrl));
+    _stompClient.connect({}, () =&gt; onWebSocketConnect(_stompClient))
+}, []);
+</code></pre> 
+
+
+<h2>jsx code</h2>
+
+
+<pre class="code-block"><code class="language-jsx">&lt;div className={styles.roomList}&gt;
+  {
+    roomList.length &gt; 0
+      ? roomList.map(room =&gt; (
+          &lt;a className={styles.room} onClick={() =&gt; onClickJoinRoom(room)}&gt;
+            Join {room}
+          &lt;/a&gt;
+        )
+      )
+      : (&quot;No Chat Rooms&quot;)
+  }
+&lt;/div&gt;
+</code></pre> 
+
+
+<h2>more jsx</h2>
+
+
+<pre class="code-block"><code class="language-jsx">&lt;input type=&quot;text&quot;
+    value={createRoomName}
+    onChange={({target: {value}}) =&gt; setCreateRoomName(value)}/&gt;
+&lt;button onClick={onClickCreateRoom}&gt;Create Room&lt;/button&gt;
+
+const onClickCreateRoom = () =&gt; {
+  stompClient.send(`${baseDestinationUrl}/createRoom`, createRoomName)
+}
+</code></pre> 
+
+
+<h2>html with jx</h2>
+
+
+<pre class="code-block"><code class="language-jsx">&lt;h3&gt;Messages for Room: {joinRoomName}&lt;/h3&gt;
+&lt;pre&gt;{JSON.stringify(messages, null, &#39; &#39;)}&lt;/pre&gt;
+&lt;div&gt;
+    &lt;input type=&quot;text&quot;
+           value={newMessage}
+           onChange={({target: {value}}) =&gt; setNewMessage(value)}
+           onKeyDown={onKeyDownUserMessage}/&gt;
+&lt;/div&gt;
+</code></pre> 
+
+
+<h2>html code</h2>
+
+
+<h2>ul</h2>
+
+
+<pre class="code-block"><code class="language-html">&lt;ul&gt;
+  &lt;li&gt;First item&lt;/li&gt;
+  &lt;li&gt;Second item&lt;/li&gt;
+  &lt;li&gt;Third item&lt;/li&gt;
+&lt;/ul&gt;
+</code></pre> 
+
+
+<h2>table</h2>
+
+
+<pre class="code-block"><code class="language-html">&lt;table&gt;
+  &lt;tr&gt;
+    &lt;th&gt;Header 1&lt;/th&gt;
+    &lt;th&gt;Header 2&lt;/th&gt;           
+    &lt;th&gt;Header 3&lt;/th&gt;
+  &lt;/tr&gt;
+    &lt;tr&gt;
+        &lt;td&gt;Row 1 Col 1&lt;/td&gt;
+        &lt;td&gt;Row 1 Col 2&lt;/td&gt;           
+        &lt;td&gt;Row 1 Col 3&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+        &lt;td&gt;Row 2 Col 1&lt;/td&gt;
+        &lt;td&gt;Row 2 Col 2&lt;/td&gt;
+        &lt;td&gt;Row 2 Col 3&lt;/td&gt;
+    &lt;/tr&gt;
+&lt;/table&gt;
+</code></pre> 
+
+</div>
+            <footer class="main-footer">
+                <div class="container">
+                    <p>
+                        &copy; <span id="this-year"></span> seg4lt. Markdown to
+                        html generator written in Zig
+                    </p>
+                </div>
+            </footer>
+            <script>
+                document.addEventListener("DOMContentLoaded", (event) => {
+                    document.getElementById("this-year").textContent =
+                        new Date().getFullYear();
+                    hljs.highlightAll();
+                });
+            </script>
+        </div>
+    </body>
+</html>

@@ -408,11 +408,13 @@ const HtmlGenerator = struct {
             "";
 
         const tmpl_str = try self.template_manager.get(tmpl.TMPL_CODE_BLOCK_HTML.name);
+        const escaped_content = try escapeHtml(self.arena, code_block.content);
+
         const code_html = try TemplateManager.replacePlaceholders(
             self.arena,
             tmpl_str,
             &[_][]const u8{ "{{class}}", "{{content}}" },
-            &[_][]const u8{ class_attr, code_block.content },
+            &[_][]const u8{ class_attr, escaped_content },
         );
         return code_html;
     }
@@ -616,21 +618,6 @@ const InlineStyler = struct {
         return true;
     }
 
-    fn escapeHtml(allocator: std.mem.Allocator, text: []const u8) ![]u8 {
-        var result: ArrayList(u8) = .empty;
-        for (text) |ch| {
-            switch (ch) {
-                '<' => try result.appendSlice(allocator, "&lt;"),
-                '>' => try result.appendSlice(allocator, "&gt;"),
-                '&' => try result.appendSlice(allocator, "&amp;"),
-                '"' => try result.appendSlice(allocator, "&quot;"),
-                '\'' => try result.appendSlice(allocator, "&#39;"),
-                else => try result.append(allocator, ch),
-            }
-        }
-        return result.toOwnedSlice(allocator);
-    }
-
     fn processLink(self: *@This()) !bool {
         // [text](url)
         if (self.peek() != '[') return false;
@@ -762,6 +749,21 @@ const InlineStyler = struct {
         return self.source[idx];
     }
 };
+
+fn escapeHtml(allocator: std.mem.Allocator, text: []const u8) ![]u8 {
+    var result: ArrayList(u8) = .empty;
+    for (text) |ch| {
+        switch (ch) {
+            '<' => try result.appendSlice(allocator, "&lt;"),
+            '>' => try result.appendSlice(allocator, "&gt;"),
+            '&' => try result.appendSlice(allocator, "&amp;"),
+            '"' => try result.appendSlice(allocator, "&quot;"),
+            '\'' => try result.appendSlice(allocator, "&#39;"),
+            else => try result.append(allocator, ch),
+        }
+    }
+    return result.toOwnedSlice(allocator);
+}
 
 const std = @import("std");
 const Document = @import("Document.zig");
