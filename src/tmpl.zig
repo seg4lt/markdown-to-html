@@ -45,6 +45,7 @@ pub const DEFAULT_STYLES_CSS =
 \\    --ternary-color: oklch(0.63 0.12 255.91);
 \\    --nav-primary-color: oklch(0.62 0.18 315.9);
 \\    --error-primary-color: oklch(0.7 0.12 18.77);
+\\    --box-shadow-color: oklch(0.39 0 0 / 0.68);
 \\}
 \\* {
 \\    margin: 0;
@@ -84,7 +85,7 @@ pub const DEFAULT_STYLES_CSS =
 \\    border: 4px solid var(--text-foreground);
 \\    background-color: var(--bg-background-slightly-light);
 \\    padding: 16px;
-\\    box-shadow: 8px 8px 0px 0px rgba(250, 250, 250, 1);
+\\    box-shadow: 8px 8px 0px 0px var(--box-shadow-color);
 \\    position: sticky;
 \\    top: 0;
 \\}
@@ -213,7 +214,7 @@ pub const DEFAULT_STYLES_CSS =
 \\    font-weight: 900;
 \\    text-transform: uppercase;
 \\    color: var(--bg-background);
-\\    box-shadow: 4px 4px 0px 0px rgba(250, 250, 250, 1);
+\\    box-shadow: 4px 4px 0px 0px var(--box-shadow-color);
 \\    transition: all 0.2s;
 \\    text-decoration: none;
 \\}
@@ -228,7 +229,7 @@ pub const DEFAULT_STYLES_CSS =
 \\    border: 4px solid var(--text-foreground);
 \\    background-color: var(--bg-background-slightly-light);
 \\    padding: 24px;
-\\    box-shadow: 6px 6px 0px 0px rgba(250, 250, 250, 1);
+\\    box-shadow: 6px 6px 0px 0px var(--box-shadow-color);
 \\}
 \\.wide-card {
 \\    grid-column: span 1;
@@ -290,7 +291,7 @@ pub const DEFAULT_STYLES_CSS =
 \\    border: 4px solid var(--text-foreground);
 \\    background-color: var(--code-background-color);
 \\    padding: 16px;
-\\    box-shadow: 4px 4px 0px 0px rgba(250, 250, 250, 1);
+\\    box-shadow: 4px 4px 0px 0px var(--box-shadow-color);
 \\}
 \\.code-block code {
 \\    border: none;
@@ -565,7 +566,7 @@ pub const DEFAULT_STYLES_CSS =
 \\    font-family: "Cascadia Code", monospace;
 \\    font-size: 0.875rem;
 \\    font-weight: 700;
-\\    box-shadow: 2px 2px 0px 0px rgba(250, 250, 250, 1);
+\\    box-shadow: 2px 2px 0px 0px var(--box-shadow-color);
 \\}
 \\
 ;
