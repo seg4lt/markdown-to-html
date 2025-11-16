@@ -62,7 +62,7 @@ pub const DEFAULT_STYLES_CSS =
 \\code {
 \\    font-family: "Cascadia Code", monospace;
 \\    border-radius: 4px;
-\\    border: 2px solid var(--text-foreground);
+\\    /*border: 2px solid var(--text-foreground);*/
 \\    background-color: var(--code-background-color);
 \\    padding: 2px 8px;
 \\    font-size: 0.875rem;
@@ -82,7 +82,7 @@ pub const DEFAULT_STYLES_CSS =
 \\============================================ */
 \\.main-header {
 \\    margin-bottom: 48px;
-\\    border: 4px solid var(--text-foreground);
+\\    /*border: 4px solid var(--text-foreground);*/
 \\    background-color: var(--bg-background-slightly-light);
 \\    padding: 16px;
 \\    box-shadow: 8px 8px 0px 0px var(--box-shadow-color);
@@ -208,7 +208,7 @@ pub const DEFAULT_STYLES_CSS =
 \\}
 \\.button-link {
 \\    display: inline-block;
-\\    border: 4px solid var(--text-foreground);
+\\    /*border: 4px solid var(--text-foreground);*/
 \\    background-color: var(--primary-color);
 \\    padding: 8px 16px;
 \\    font-weight: 900;
@@ -226,7 +226,7 @@ pub const DEFAULT_STYLES_CSS =
 \\CARD COMPONENTS
 \\============================================ */
 \\.card {
-\\    border: 4px solid var(--text-foreground);
+\\    /*border: 4px solid var(--text-foreground);*/
 \\    background-color: var(--bg-background-slightly-light);
 \\    padding: 24px;
 \\    box-shadow: 6px 6px 0px 0px var(--box-shadow-color);
@@ -288,7 +288,7 @@ pub const DEFAULT_STYLES_CSS =
 \\============================================ */
 \\.code-block {
 \\    overflow-x: auto;
-\\    border: 4px solid var(--text-foreground);
+\\    /*border: 4px solid var(--text-foreground);*/
 \\    background-color: var(--code-background-color);
 \\    padding: 16px;
 \\    box-shadow: 4px 4px 0px 0px var(--box-shadow-color);
@@ -408,7 +408,7 @@ pub const DEFAULT_STYLES_CSS =
 \\    width: 24px;
 \\    height: 24px;
 \\    flex-shrink: 0;
-\\    border: 2px solid var(--text-foreground);
+\\    /*border: 2px solid var(--text-foreground);*/
 \\    font-weight: 900;
 \\    font-size: 0.875rem;
 \\}
@@ -476,7 +476,7 @@ pub const DEFAULT_STYLES_CSS =
 \\    height: 12px;
 \\    flex-shrink: 0;
 \\    margin-top: 4px;
-\\    border: 2px solid var(--text-foreground);
+\\    /*border: 2px solid var(--text-foreground);*/
 \\}
 \\.primary-bullet {
 \\    background-color: var(--primary-color);
@@ -544,7 +544,7 @@ pub const DEFAULT_STYLES_CSS =
 \\    height: 24px;
 \\    flex-shrink: 0;
 \\    margin-top: 2px;
-\\    border: 4px solid var(--text-foreground);
+\\    /*border: 4px solid var(--text-foreground);*/
 \\    background-color: var(--code-background-color);
 \\    font-weight: 900;
 \\    font-size: 1.125rem;
