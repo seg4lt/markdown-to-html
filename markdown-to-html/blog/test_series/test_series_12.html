@@ -3,7 +3,7 @@
     <head>
         <meta charset="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-        <title>Test Series 03</title>
+        <title>Test Series 12 - Mixed Complex Content</title>
         <link rel="stylesheet" href="/markdown-to-html/styles.css" />
         <link
             rel="stylesheet"
@@ -48,7 +48,7 @@
 
             </header>
             <div class="main-content">
-<h1>Test Series 03</h1>
+<h1>Test Series 12 - Mixed Complex Content</h1>
 
 
 <section class="card">
@@ -76,7 +76,7 @@
 </li>
 
 <li class="blog-series-item">
-    <span class="number primary-number">3</span>
+    <span class="number secondary-number">3</span>
     <span>
         <a href="/markdown-to-html/blog/test_series/test_series_03.html" class="blog-series-toc-link text-link">
             Test Series 03 - 2024-01-03
@@ -157,7 +157,7 @@
 </li>
 
 <li class="blog-series-item">
-    <span class="number secondary-number">12</span>
+    <span class="number primary-number">12</span>
     <span>
         <a href="/markdown-to-html/blog/test_series/test_series_12.html" class="blog-series-toc-link text-link">
             Test Series 12 - Mixed Complex Content - 2024-01-12
@@ -196,6 +196,119 @@
 </ol>
 </div>
 </section>
+
+
+<h2>Complex Section with Everything</h2>
+
+
+<p>This section combines multiple markdown features:</p>
+
+
+<ol class="normal-ordered-list normal-ordered-list-depth-1">
+    <li>
+    <span class="number primary-number">1</span>
+    <span><strong class="bold">Ordered list</strong> with nested content:</span>
+</li>
+<ul class="nested-unordered-list nested-unordered-list-depth-2">
+<li>
+<span class="bullet secondary-bullet"></span>
+<span>Unordered sub-item with <code class="inline-code">inline code</code></span>
+</li> 
+<li>
+<span class="bullet secondary-bullet"></span>
+<span>Another sub-item with <a href="https://example.com" class="text-link" target="_blank">a link</a>
+</span>
+</li> 
+<li>
+<span class="bullet secondary-bullet"></span>
+<span>Sub-item with <em class="italic">italic</em> and <strong class="bold">bold</strong> text</span>
+</li> 
+
+</ul> 
+
+</ol>
+
+
+<ol class="normal-ordered-list normal-ordered-list-depth-1">
+    <li>
+    <span class="number primary-number">1</span>
+    <span><strong class="bold">Code block</strong> example:</span>
+</li>
+
+</ol>
+
+
+<pre class="code-block"><code class="language-zig">const std = @import(&quot;std&quot;);
+
+pub fn main() !void {
+    const stdout = std.io.getStdOut().writer();
+    try stdout.print(&quot;Hello, World!\n&quot;, .{});
+}
+</code></pre> 
+
+
+<ol class="normal-ordered-list normal-ordered-list-depth-1">
+    <li>
+    <span class="number primary-number">1</span>
+    <span><strong class="bold">Block quote</strong> with content:</span>
+</li>
+
+</ol>
+
+
+<blockquote class="quote normal-quote"><p>This is a block quote containing:</p><p>- A list item</p><p>- Another list item</p><p>- And <code class="inline-code">inline code</code></p><p>It also has <strong class="bold">bold text</strong> and <em class="italic">italic text</em>.</p></blockquote>
+
+
+<h2>Table with Complex Content</h2>
+
+
+<p>| Feature | Example | Notes | |:--------|:--------|:------| | Code | <code class="inline-code">const x = 10;</code> | Inline code in table | | Link | <a href="https://example.com" class="text-link" target="_blank">Example</a>
+ | Link in table cell | | Formatting | <strong class="bold">Bold</strong> and <em class="italic">italic</em> | Mixed formatting | | List | - Item 1<br>- Item 2 | HTML list in table |</p>
+
+
+<h2>Nested Structures</h2>
+
+
+<h3>Code in Lists</h3>
+
+
+<ul class="normal-unordered-list normal-unordered-list-depth-1">
+<li>
+<span class="bullet primary-bullet"></span>
+<span>First item with code:</span>
+</li> 
+
+</ul> 
+
+
+<pre class="code-block"><code class="language-python">  def hello():
+      print(&quot;Hello!&quot;)
+  ```
+- Second item with different code:
+  ```rust
+  fn main() {
+      println!(&quot;Hello!&quot;);
+  }
+  ```
+
+### Lists in Block Quotes
+
+&gt; Important points to remember:
+&gt; 
+&gt; 1. First point
+&gt; 2. Second point
+&gt;    - Sub-point A
+&gt;    - Sub-point B
+&gt; 3. Third point
+
+### Links and Formatting
+
+Visit [this **bold link**](https://example.com) for more information.
+
+Check out the [*italic link*](https://example.com) as well.
+
+Here&#39;s a [link with `code`](https://example.com) in the text.
+</code></pre> 
 
 </div>
             <footer class="main-footer">

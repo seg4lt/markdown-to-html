@@ -3,7 +3,7 @@
     <head>
         <meta charset="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-        <title>Test Series 03</title>
+        <title>Test Series 13 - Advanced Code Examples</title>
         <link rel="stylesheet" href="/markdown-to-html/styles.css" />
         <link
             rel="stylesheet"
@@ -48,7 +48,7 @@
 
             </header>
             <div class="main-content">
-<h1>Test Series 03</h1>
+<h1>Test Series 13 - Advanced Code Examples</h1>
 
 
 <section class="card">
@@ -76,7 +76,7 @@
 </li>
 
 <li class="blog-series-item">
-    <span class="number primary-number">3</span>
+    <span class="number secondary-number">3</span>
     <span>
         <a href="/markdown-to-html/blog/test_series/test_series_03.html" class="blog-series-toc-link text-link">
             Test Series 03 - 2024-01-03
@@ -166,7 +166,7 @@
 </li>
 
 <li class="blog-series-item">
-    <span class="number secondary-number">13</span>
+    <span class="number primary-number">13</span>
     <span>
         <a href="/markdown-to-html/blog/test_series/test_series_13.html" class="blog-series-toc-link text-link">
             Test Series 13 - Advanced Code Examples - 2024-01-13
@@ -196,6 +196,152 @@
 </ol>
 </div>
 </section>
+
+
+<h2>Zig Memory Management</h2>
+
+
+<pre class="code-block"><code class="language-zig">const std = @import(&quot;std&quot;);
+const Allocator = std.mem.Allocator;
+
+pub fn main() !void {
+    var gpa = std.heap.GeneralPurposeAllocator(.{}){};
+    defer _ = gpa.deinit();
+    const allocator = gpa.allocator();
+
+    const numbers = try allocator.alloc(i32, 10);
+    defer allocator.free(numbers);
+
+    for (numbers, 0..) |*num, i| {
+        num.* = @intCast(i32, i * i);
+    }
+
+    const stdout = std.io.getStdOut().writer();
+    for (numbers) |num| {
+        try stdout.print(&quot;{d} &quot;, .{num});
+    }
+    try stdout.print(&quot;\n&quot;, .{});
+}
+</code></pre> 
+
+
+<h2>Rust Async Example</h2>
+
+
+<pre class="code-block"><code class="language-rust">use tokio::time::{sleep, Duration};
+use std::sync::Arc;
+
+async fn fetch_data(id: u32) -&gt; Result&lt;String, Box&lt;dyn std::error::Error&gt;&gt; {
+    sleep(Duration::from_millis(100)).await;
+    Ok(format!(&quot;Data for id: {}&quot;, id))
+}
+
+#[tokio::main]
+async fn main() -&gt; Result&lt;(), Box&lt;dyn std::error::Error&gt;&gt; {
+    let handles: Vec&lt;_&gt; = (0..5)
+        .map(|i| tokio::spawn(fetch_data(i)))
+        .collect();
+
+    for handle in handles {
+        let result = handle.await??;
+        println!(&quot;{}&quot;, result);
+    }
+    Ok(())
+}
+</code></pre> 
+
+
+<h2>TypeScript Generic Functions</h2>
+
+
+<pre class="code-block"><code class="language-typescript">interface Repository&lt;T&gt; {
+  findById(id: string): Promise&lt;T | null&gt;;
+  findAll(): Promise&lt;T[]&gt;;
+  save(entity: T): Promise&lt;T&gt;;
+  delete(id: string): Promise&lt;void&gt;;
+}
+
+class UserRepository implements Repository&lt;User&gt; {
+  async findById(id: string): Promise&lt;User | null&gt; {
+    // Implementation
+    return null;
+  }
+
+  async findAll(): Promise&lt;User[]&gt; {
+    return [];
+  }
+
+  async save(user: User): Promise&lt;User&gt; {
+    return user;
+  }
+
+  async delete(id: string): Promise&lt;void&gt; {
+    // Implementation
+  }
+}
+</code></pre> 
+
+
+<h2>Python Context Managers</h2>
+
+
+<pre class="code-block"><code class="language-python">from contextlib import contextmanager
+from typing import Iterator
+
+@contextmanager
+def managed_resource(name: str) -&gt; Iterator[str]:
+    &quot;&quot;&quot;Context manager for resource management.&quot;&quot;&quot;
+    print(f&quot;Acquiring resource: {name}&quot;)
+    try:
+        yield name
+    finally:
+        print(f&quot;Releasing resource: {name}&quot;)
+
+# Usage
+with managed_resource(&quot;database&quot;) as db:
+    print(f&quot;Using {db}&quot;)
+    # Resource is automatically released
+</code></pre> 
+
+
+<h2>Go Concurrency Patterns</h2>
+
+
+<pre class="code-block"><code class="language-go">package main
+
+import (
+    &quot;context&quot;
+    &quot;fmt&quot;
+    &quot;sync&quot;
+    &quot;time&quot;
+)
+
+func worker(ctx context.Context, id int, wg *sync.WaitGroup) {
+    defer wg.Done()
+    for {
+        select {
+        case &lt;-ctx.Done():
+            fmt.Printf(&quot;Worker %d stopping\n&quot;, id)
+            return
+        default:
+            fmt.Printf(&quot;Worker %d working\n&quot;, id)
+            time.Sleep(1 * time.Second)
+        }
+    }
+}
+
+func main() {
+    ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+    defer cancel()
+
+    var wg sync.WaitGroup
+    for i := 0; i &lt; 3; i++ {
+        wg.Add(1)
+        go worker(ctx, i, &amp;wg)
+    }
+    wg.Wait()
+}
+</code></pre> 
 
 </div>
             <footer class="main-footer">

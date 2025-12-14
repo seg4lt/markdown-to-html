@@ -278,6 +278,27 @@ const HtmlGenerator = struct {
         return Error.UnknownMagicMarker;
     }
 
+    fn calculateCenteredDisplayRange(current_pos: usize, total_items: usize, requested_items: usize) struct { start: usize, end: usize } {
+        const num_items = @min(requested_items, total_items);
+        var start_idx: usize = 0;
+        var end_idx: usize = total_items;
+
+        if (num_items < total_items) {
+            // Center the current item
+            const half_window = num_items / 2;
+            start_idx = if (current_pos >= half_window) current_pos - half_window else 0;
+            end_idx = start_idx + num_items;
+
+            // Adjust if we go past the end
+            if (end_idx > total_items) {
+                end_idx = total_items;
+                start_idx = if (end_idx >= num_items) end_idx - num_items else 0;
+            }
+        }
+
+        return .{ .start = start_idx, .end = end_idx };
+    }
+
     fn generateBlogSeriesTableOfContent(self: *@This(), marker: Node.MagicMarker) ![]u8 {
         const blog_list = self.groups.get(self.document.file_path) orelse return "";
 
@@ -298,18 +319,35 @@ const HtmlGenerator = struct {
                 return std.mem.order(u8, context[a].frontmatter.date, context[b].frontmatter.date) == .lt;
             }
         }.lessThan);
-        // TODO(seg4lt) maybe for blog series we need to bit smart
-        // you show total of what we want, but where we are in series is middle
-        // if not for long series, table of content will be too long
-        const num_items = blk: {
+        // find current document position in sorted list
+        // this is done, so we can find center point to pull items around it, also for making primary and secondary items
+        const current_idx: ?usize = blk: {
+            for (blog_list_sorted_index, 0..) |idx, i| {
+                if (std.mem.eql(u8, blog_list.items[idx].file_name, self.document.file_name)) {
+                    break :blk i;
+                }
+            }
+            break :blk 0;
+        };
+
+        const requested_items = blk: {
             if (marker.args) |arg| {
-                break :blk std.fmt.parseInt(u8, arg, 10) catch blog_list.items.len;
+                const trimmed_arg = std.mem.trim(u8, arg, " \t\r\n}}");
+                break :blk std.fmt.parseInt(u8, trimmed_arg, 10) catch blog_list.items.len;
             }
             break :blk blog_list.items.len;
         };
 
-        for (blog_list_sorted_index[0..num_items], 0..) |idx, i| {
+        const display_range = Self.calculateCenteredDisplayRange(current_idx, blog_list.items.len, requested_items);
+
+        // Get the actual indices to display
+        const display_indices = blog_list_sorted_index[display_range.start..display_range.end];
+        const display_start_number = display_range.start + 1; // 1-based numbering
+
+        for (display_indices, 0..) |idx, i| {
             const info = blog_list.items[idx];
+            const is_current = std.mem.eql(u8, info.file_name, self.document.file_name);
+
             const link = try std.fmt.allocPrint(
                 self.arena,
                 "{s}/{s}/{s}.html",
@@ -326,8 +364,8 @@ const HtmlGenerator = struct {
                 &[_][]const u8{ "{{variant}}", "{{number}}", "{{link}}", "{{title}}", "{{date}}" },
 
                 &[_][]const u8{
-                    "primary",
-                    try std.fmt.allocPrint(self.arena, "{d}", .{i + 1}),
+                    if (is_current) "primary" else "secondary",
+                    try std.fmt.allocPrint(self.arena, "{d}", .{display_start_number + i}),
                     link,
                     info.frontmatter.title,
                     info.frontmatter.date,

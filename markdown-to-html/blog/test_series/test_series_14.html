@@ -3,7 +3,7 @@
     <head>
         <meta charset="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-        <title>Test Series 03</title>
+        <title>Test Series 14 - Documentation Patterns</title>
         <link rel="stylesheet" href="/markdown-to-html/styles.css" />
         <link
             rel="stylesheet"
@@ -48,7 +48,7 @@
 
             </header>
             <div class="main-content">
-<h1>Test Series 03</h1>
+<h1>Test Series 14 - Documentation Patterns</h1>
 
 
 <section class="card">
@@ -76,7 +76,7 @@
 </li>
 
 <li class="blog-series-item">
-    <span class="number primary-number">3</span>
+    <span class="number secondary-number">3</span>
     <span>
         <a href="/markdown-to-html/blog/test_series/test_series_03.html" class="blog-series-toc-link text-link">
             Test Series 03 - 2024-01-03
@@ -175,7 +175,7 @@
 </li>
 
 <li class="blog-series-item">
-    <span class="number secondary-number">14</span>
+    <span class="number primary-number">14</span>
     <span>
         <a href="/markdown-to-html/blog/test_series/test_series_14.html" class="blog-series-toc-link text-link">
             Test Series 14 - Documentation Patterns - 2024-01-14
@@ -196,6 +196,163 @@
 </ol>
 </div>
 </section>
+
+
+<h2>API Documentation Example</h2>
+
+
+<h3><code class="inline-code">calculateTotal(items, taxRate)</code></h3>
+
+
+<p>Calculates the total price including tax.</p>
+
+
+<p><strong class="bold">Parameters:</strong></p>
+
+
+<ul class="normal-unordered-list normal-unordered-list-depth-1">
+<li>
+<span class="bullet primary-bullet"></span>
+<span><code class="inline-code">items</code> (Array<Item>): List of items with price property</span>
+</li> 
+<li>
+<span class="bullet primary-bullet"></span>
+<span><code class="inline-code">taxRate</code> (number): Tax rate as decimal (e.g., 0.08 for 8%)</span>
+</li> 
+
+</ul> 
+
+
+<p><strong class="bold">Returns:</strong> (number) Total price including tax</p>
+
+
+<p><strong class="bold">Example:</strong></p>
+
+
+<pre class="code-block"><code class="language-javascript">const items = [
+  { name: &quot;Apple&quot;, price: 1.00 },
+  { name: &quot;Banana&quot;, price: 0.50 }
+];
+const total = calculateTotal(items, 0.08);
+console.log(total); // 1.62
+</code></pre> 
+
+
+<h2>Function Reference</h2>
+
+
+<h3><code class="inline-code">parseMarkdown(text: string): Document</code></h3>
+
+
+<p>Parses markdown text into a document structure.</p>
+
+
+<p><strong class="bold">Type Parameters:</strong></p>
+
+
+<ul class="normal-unordered-list normal-unordered-list-depth-1">
+<li>
+<span class="bullet primary-bullet"></span>
+<span>None</span>
+</li> 
+
+</ul> 
+
+
+<p><strong class="bold">Parameters:</strong></p>
+
+
+<ul class="normal-unordered-list normal-unordered-list-depth-1">
+<li>
+<span class="bullet primary-bullet"></span>
+<span><code class="inline-code">text</code> (string): Markdown text to parse</span>
+</li> 
+
+</ul> 
+
+
+<p><strong class="bold">Returns:</strong> <code class="inline-code">Document</code> - Parsed document object</p>
+
+
+<p><strong class="bold">Throws:</strong> <code class="inline-code">ParseError</code> if markdown is invalid</p>
+
+
+<p><strong class="bold">Example:</strong></p>
+
+
+<pre class="code-block"><code class="language-typescript">const markdown = &quot;# Hello\n\nThis is **bold**.&quot;;
+const doc = parseMarkdown(markdown);
+console.log(doc.title); // &quot;Hello&quot;
+</code></pre> 
+
+
+<h2>Configuration Example</h2>
+
+
+<h3>Settings</h3>
+
+
+<p>| Setting | Type | Default | Description | |:--------|:-----|:--------|:------------| | <code class="inline-code">debug</code> | boolean | <code class="inline-code">false</code> | Enable debug logging | | <code class="inline-code">port</code> | number | <code class="inline-code">8080</code> | Server port number | | <code class="inline-code">host</code> | string | <code class="inline-code">&quot;localhost&quot;</code> | Server host address | | <code class="inline-code">timeout</code> | number | <code class="inline-code">5000</code> | Request timeout in ms |</p>
+
+
+<h3>Usage</h3>
+
+
+<pre class="code-block"><code class="language-json">{
+  &quot;debug&quot;: true,
+  &quot;port&quot;: 3000,
+  &quot;host&quot;: &quot;0.0.0.0&quot;,
+  &quot;timeout&quot;: 10000
+}
+</code></pre> 
+
+
+<h2>Step-by-Step Guide</h2>
+
+
+<ol class="normal-ordered-list normal-ordered-list-depth-1">
+    <li>
+    <span class="number primary-number">1</span>
+    <span><strong class="bold">Installation</strong></span>
+</li>
+
+</ol>
+
+
+<pre class="code-block"><code class="language-bash">   npm install package-name
+   ```
+
+2. **Configuration**
+   - Create config file
+   - Set environment variables
+   - Configure database connection
+
+3. **Usage**
+   ```javascript
+   import { initialize } from &#39;package-name&#39;;
+   
+   const app = initialize({
+     config: &#39;./config.json&#39;
+   });
+   ```
+
+4. **Testing**
+   ```bash
+   npm test
+   ```
+
+## Troubleshooting
+
+### Common Issues
+
+&gt; **Problem:** Module not found
+&gt; 
+&gt; **Solution:** Run `npm install` to install dependencies.
+
+&gt; **Problem:** Port already in use
+&gt; 
+&gt; **Solution:** Change the port in configuration or stop the process using the port.
+</code></pre> 
 
 </div>
             <footer class="main-footer">

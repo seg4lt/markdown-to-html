@@ -289,9 +289,14 @@ const Parser = struct {
             }
 
             first_line = false;
-            const content_raw = std.mem.trim(u8, line[2..], " \t\r");
-            try content.appendSlice(self.mem_ctx.global, content_raw);
-            try content.append(self.mem_ctx.global, '\n');
+            if (line.len >= 2) {
+                const content_raw = std.mem.trim(u8, line[2..], " \t\r");
+                try content.appendSlice(self.mem_ctx.global, content_raw);
+                try content.append(self.mem_ctx.global, '\n');
+            } else {
+                // Empty blockquote line, just add newline
+                try content.append(self.mem_ctx.global, '\n');
+            }
         }
         if (kind != .normal and content.items.len == 0) {
             std.log.err("{s} found without any notes following it", .{@tagName(kind)});

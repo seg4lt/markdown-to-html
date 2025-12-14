@@ -3,7 +3,7 @@
     <head>
         <meta charset="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-        <title>Test Series 03</title>
+        <title>Test Series 15 - Ultimate Complexity</title>
         <link rel="stylesheet" href="/markdown-to-html/styles.css" />
         <link
             rel="stylesheet"
@@ -48,7 +48,7 @@
 
             </header>
             <div class="main-content">
-<h1>Test Series 03</h1>
+<h1>Test Series 15 - Ultimate Complexity</h1>
 
 
 <section class="card">
@@ -76,7 +76,7 @@
 </li>
 
 <li class="blog-series-item">
-    <span class="number primary-number">3</span>
+    <span class="number secondary-number">3</span>
     <span>
         <a href="/markdown-to-html/blog/test_series/test_series_03.html" class="blog-series-toc-link text-link">
             Test Series 03 - 2024-01-03
@@ -184,7 +184,7 @@
 </li>
 
 <li class="blog-series-item">
-    <span class="number secondary-number">15</span>
+    <span class="number primary-number">15</span>
     <span>
         <a href="/markdown-to-html/blog/test_series/test_series_15.html" class="blog-series-toc-link text-link">
             Test Series 15 - Ultimate Complexity - 2024-01-15
@@ -196,6 +196,185 @@
 </ol>
 </div>
 </section>
+
+
+<h2>Introduction</h2>
+
+
+<p>This document demonstrates the <strong class="bold">ultimate complexity</strong> in markdown formatting, combining <em class="italic">all</em> available features in intricate patterns.</p>
+
+
+<h2>Complex Code Example</h2>
+
+
+<p>Here's a complex example with multiple languages:</p>
+
+
+<h3>Zig Implementation</h3>
+
+
+<pre class="code-block"><code class="language-zig">const std = @import(&quot;std&quot;);
+
+pub const Parser = struct {
+    allocator: std.mem.Allocator,
+    tokens: std.ArrayList(Token),
+
+    pub fn init(allocator: std.mem.Allocator) Parser {
+        return .{
+            .allocator = allocator,
+            .tokens = std.ArrayList(Token).init(allocator),
+        };
+    }
+
+    pub fn parse(self: *Parser, input: []const u8) !void {
+        // Complex parsing logic here
+        _ = input;
+    }
+};
+</code></pre> 
+
+
+<h3>Equivalent Rust Code</h3>
+
+
+<pre class="code-block"><code class="language-rust">use std::collections::VecDeque;
+
+pub struct Parser {
+    tokens: VecDeque&lt;Token&gt;,
+}
+
+impl Parser {
+    pub fn new() -&gt; Self {
+        Self {
+            tokens: VecDeque::new(),
+        }
+    }
+
+    pub fn parse(&amp;mut self, input: &amp;str) -&gt; Result&lt;(), ParseError&gt; {
+        // Complex parsing logic
+        Ok(())
+    }
+}
+</code></pre> 
+
+
+<h2>Complex Data Structures</h2>
+
+
+<h3>Comparison Table</h3>
+
+
+<p>| Feature | Zig | Rust | Go | Python | |:--------|:----|:----|:---|:--------| | Memory Safety | Compile-time | Ownership | GC | GC | | Performance | ⭐⭐⭐⭐⭐ | ⭐⭐⭐⭐⭐ | ⭐⭐⭐⭐ | ⭐⭐⭐ | | Learning Curve | Steep | Steep | Moderate | Easy | | Use Case | Systems | Systems | Services | General |</p>
+
+
+<h3>Nested Lists with Code</h3>
+
+
+<ol class="normal-ordered-list normal-ordered-list-depth-1">
+    <li>
+    <span class="number primary-number">1</span>
+    <span><strong class="bold">Language Features</strong></span>
+</li>
+<ul class="nested-unordered-list nested-unordered-list-depth-2">
+<li>
+<span class="bullet secondary-bullet"></span>
+<span>Memory management:</span>
+</li> 
+
+</ul> 
+
+</ol>
+
+
+<pre class="code-block"><code class="language-zig">     const mem = try allocator.alloc(u8, size);
+     defer allocator.free(mem);
+     ```
+   - Error handling:
+     ```rust
+     match result {
+         Ok(value) =&gt; println!(&quot;{}&quot;, value),
+         Err(e) =&gt; eprintln!(&quot;Error: {}&quot;, e),
+     }
+     ```
+   - Concurrency:
+     ```go
+     go func() {
+         // Concurrent operation
+     }()
+     ```
+
+2. **Best Practices**
+   - Always handle errors
+   - Use appropriate data structures
+   - Write tests
+
+## Block Quotes with Complex Content
+
+&gt; ### Important Considerations
+&gt; 
+&gt; When choosing a language, consider:
+&gt; 
+&gt; 1. **Performance requirements**
+&gt;    - Real-time systems need low latency
+&gt;    - Batch processing can tolerate higher latency
+&gt; 
+&gt; 2. **Team expertise**
+&gt;    - Choose languages your team knows
+&gt;    - Consider learning curve
+&gt; 
+&gt; 3. **Ecosystem**
+&gt;    - Library availability
+&gt;    - Community support
+&gt;    - Documentation quality
+&gt; 
+&gt; &gt; Nested quote: Remember that `the best tool` is the one that fits your **specific needs**.
+
+## Mixed HTML and Markdown
+
+&lt;p&gt;This paragraph uses &lt;strong&gt;HTML&lt;/strong&gt; with &lt;em&gt;formatting&lt;/em&gt;.&lt;/p&gt;
+
+But this paragraph uses **markdown** with *formatting*.
+
+&lt;div style=&quot;background: #f0f0f0; padding: 1em; border-left: 4px solid #007acc;&quot;&gt;
+  &lt;h4&gt;Styled HTML Block&lt;/h4&gt;
+  &lt;p&gt;This is a styled HTML block with:&lt;/p&gt;
+  &lt;ul&gt;
+    &lt;li&gt;Custom styling&lt;/li&gt;
+    &lt;li&gt;Nested lists&lt;/li&gt;
+    &lt;li&gt;&lt;code&gt;Inline code&lt;/code&gt;&lt;/li&gt;
+  &lt;/ul&gt;
+&lt;/div&gt;
+
+## Task Lists with Complex Items
+
+- [x] **Phase 1: Planning**
+  - [x] Requirements gathering
+  - [x] Architecture design
+  - [x] Technology selection
+- [ ] **Phase 2: Implementation**
+  - [x] Core functionality
+  - [ ] Testing framework
+  - [ ] Documentation
+- [ ] **Phase 3: Deployment**
+  - [ ] CI/CD setup
+  - [ ] Monitoring
+  - [ ] Performance optimization
+
+## Links and References
+
+Check out these resources:
+- [Zig Documentation](https://ziglang.org/documentation/)
+- [Rust Book](https://doc.rust-lang.org/book/)
+- [Go Tour](https://go.dev/tour/)
+
+See also [test series 01](./test_series_01.md) and [test series 14](./test_series_14.md).
+
+## Conclusion
+
+This document demonstrates the **full range** of markdown capabilities, from simple *formatting* to complex nested structures with `code`, [links](https://example.com), tables, and more.
+
+&gt; Final thought: *The complexity* of markdown allows for **rich documentation** while maintaining `readability` in source form.
+</code></pre> 
 
 </div>
             <footer class="main-footer">

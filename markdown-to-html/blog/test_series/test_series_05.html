@@ -3,7 +3,7 @@
     <head>
         <meta charset="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-        <title>Test Series 03</title>
+        <title>Test Series 05 - Nested Lists and Task Lists</title>
         <link rel="stylesheet" href="/markdown-to-html/styles.css" />
         <link
             rel="stylesheet"
@@ -48,7 +48,7 @@
 
             </header>
             <div class="main-content">
-<h1>Test Series 03</h1>
+<h1>Test Series 05 - Nested Lists and Task Lists</h1>
 
 
 <section class="card">
@@ -76,7 +76,7 @@
 </li>
 
 <li class="blog-series-item">
-    <span class="number primary-number">3</span>
+    <span class="number secondary-number">3</span>
     <span>
         <a href="/markdown-to-html/blog/test_series/test_series_03.html" class="blog-series-toc-link text-link">
             Test Series 03 - 2024-01-03
@@ -94,7 +94,7 @@
 </li>
 
 <li class="blog-series-item">
-    <span class="number secondary-number">5</span>
+    <span class="number primary-number">5</span>
     <span>
         <a href="/markdown-to-html/blog/test_series/test_series_05.html" class="blog-series-toc-link text-link">
             Test Series 05 - Nested Lists and Task Lists - 2024-01-05
@@ -196,6 +196,300 @@
 </ol>
 </div>
 </section>
+
+
+<h2>Deeply Nested Unordered Lists</h2>
+
+
+<ul class="normal-unordered-list normal-unordered-list-depth-1">
+<li>
+<span class="bullet primary-bullet"></span>
+<span>Level 1 Item A</span>
+</li> 
+<ul class="nested-unordered-list nested-unordered-list-depth-2">
+<li>
+<span class="bullet secondary-bullet"></span>
+<span>Level 2 Item A.1</span>
+</li> 
+<ul class="nested-unordered-list nested-unordered-list-depth-3">
+<li>
+<span class="bullet accent-bullet"></span>
+<span>Level 3 Item A.1.1</span>
+</li> 
+<ul class="nested-unordered-list nested-unordered-list-depth-3">
+<li>
+<span class="bullet accent-bullet"></span>
+<span>Level 4 Item A.1.1.1</span>
+</li> 
+<ul class="nested-unordered-list nested-unordered-list-depth-3">
+<li>
+<span class="bullet accent-bullet"></span>
+<span>Level 5 Item A.1.1.1.1</span>
+</li> 
+
+</ul> 
+
+</ul> 
+
+</ul> 
+<li>
+<span class="bullet secondary-bullet"></span>
+<span>Level 2 Item A.2</span>
+</li> 
+<ul class="nested-unordered-list nested-unordered-list-depth-3">
+<li>
+<span class="bullet accent-bullet"></span>
+<span>Level 3 Item A.2.1</span>
+</li> 
+<li>
+<span class="bullet accent-bullet"></span>
+<span>Level 1 Item B</span>
+</li> 
+
+</ul> 
+<li>
+<span class="bullet secondary-bullet"></span>
+<span>Level 2 Item B.1</span>
+</li> 
+<li>
+<span class="bullet secondary-bullet"></span>
+<span>Level 1 Item C</span>
+</li> 
+
+</ul> 
+
+</ul> 
+
+
+<h2>Complex Ordered Lists</h2>
+
+
+<ol class="normal-ordered-list normal-ordered-list-depth-1">
+    <li>
+    <span class="number primary-number">1</span>
+    <span>First major point</span>
+</li>
+<ol class="nested-ordered-list nested-ordered-list-depth-2">
+    <li>
+    <span class="number secondary-number">1</span>
+    <span>Sub-point 1.1</span>
+</li>
+<ol class="nested-ordered-list nested-ordered-list-depth-3">
+    <li>
+    <span class="number accent-number">1</span>
+    <span>Sub-sub-point 1.1.1</span>
+</li>
+<li>
+    <span class="number accent-number">2</span>
+    <span>Sub-sub-point 1.1.2</span>
+</li>
+
+</ol>
+<li>
+    <span class="number secondary-number">3</span>
+    <span>Sub-point 1.2</span>
+</li>
+<li>
+    <span class="number secondary-number">4</span>
+    <span>Second major point</span>
+</li>
+<li>
+    <span class="number secondary-number">5</span>
+    <span>Sub-point 2.1</span>
+</li>
+<li>
+    <span class="number secondary-number">6</span>
+    <span>Sub-point 2.2</span>
+</li>
+<ol class="nested-ordered-list nested-ordered-list-depth-3">
+    <li>
+    <span class="number accent-number">1</span>
+    <span>Sub-sub-point 2.2.1</span>
+</li>
+<li>
+    <span class="number accent-number">2</span>
+    <span>Sub-sub-point 2.2.2</span>
+</li>
+<ol class="nested-ordered-list nested-ordered-list-depth-3">
+    <li>
+    <span class="number accent-number">1</span>
+    <span>Sub-sub-sub-point 2.2.2.1</span>
+</li>
+<li>
+    <span class="number accent-number">2</span>
+    <span>Third major point</span>
+</li>
+
+</ol>
+
+</ol>
+
+</ol>
+
+</ol>
+
+
+<h2>Mixed List Types</h2>
+
+
+<ul class="normal-unordered-list normal-unordered-list-depth-1">
+<li>
+<span class="bullet primary-bullet"></span>
+<span>Unordered item with nested ordered list:</span>
+</li> 
+<ol class="nested-ordered-list nested-ordered-list-depth-2">
+    <li>
+    <span class="number secondary-number">1</span>
+    <span>First ordered sub-item</span>
+</li>
+<li>
+    <span class="number secondary-number">2</span>
+    <span>Second ordered sub-item</span>
+</li>
+<li>
+    <span class="number secondary-number">3</span>
+    <span>Third ordered sub-item</span>
+</li>
+<li>
+    <span class="number secondary-number">4</span>
+    <span>Another unordered item</span>
+</li>
+<li>
+    <span class="number secondary-number">5</span>
+    <span>Item with mixed nesting:</span>
+</li>
+<li>
+    <span class="number secondary-number">6</span>
+    <span>Unordered sub-item</span>
+</li>
+<ol class="nested-ordered-list nested-ordered-list-depth-3">
+    <li>
+    <span class="number accent-number">1</span>
+    <span>Ordered sub-sub-item</span>
+</li>
+<li>
+    <span class="number accent-number">2</span>
+    <span>Another ordered sub-sub-item</span>
+</li>
+
+</ol>
+<li>
+    <span class="number secondary-number">8</span>
+    <span>Another unordered sub-item</span>
+</li>
+
+</ol>
+
+</ul> 
+
+
+<h2>Task Lists</h2>
+
+
+<ul class="normal-task-list normal-unordered-list-depth-1">
+<li>
+<span class="checkbox checked"></span>
+<span>Completed task with description</span>
+</li>
+<li>
+<span class="checkbox unchecked"></span>
+<span>Incomplete task</span>
+</li>
+<li>
+<span class="checkbox checked"></span>
+<span>Another completed task</span>
+</li>
+<li>
+<span class="checkbox unchecked"></span>
+<span>Task with nested content</span>
+</li>
+<ul class="nested-task-list nested-unordered-list-depth-2">
+<li>
+<span class="checkbox checked"></span>
+<span>Nested completed task</span>
+</li>
+<li>
+<span class="checkbox unchecked"></span>
+<span>Nested incomplete task</span>
+</li>
+<li>
+<span class="checkbox unchecked"></span>
+<span>Final task item</span>
+</li>
+
+</ul>
+
+</ul>
+
+
+<h2>Complex Task Lists</h2>
+
+
+<ul class="normal-task-list normal-unordered-list-depth-1">
+<li>
+<span class="checkbox unchecked"></span>
+<span>Project setup</span>
+</li>
+<ul class="nested-task-list nested-unordered-list-depth-2">
+<li>
+<span class="checkbox checked"></span>
+<span>Initialize repository</span>
+</li>
+<li>
+<span class="checkbox checked"></span>
+<span>Set up build system</span>
+</li>
+<li>
+<span class="checkbox unchecked"></span>
+<span>Configure CI/CD</span>
+</li>
+<ul class="nested-task-list nested-unordered-list-depth-3">
+<li>
+<span class="checkbox checked"></span>
+<span>GitHub Actions workflow</span>
+</li>
+<li>
+<span class="checkbox unchecked"></span>
+<span>Docker container setup</span>
+</li>
+<li>
+<span class="checkbox unchecked"></span>
+<span>Core features</span>
+</li>
+
+</ul>
+<li>
+<span class="checkbox checked"></span>
+<span>User authentication</span>
+</li>
+<li>
+<span class="checkbox unchecked"></span>
+<span>Database schema</span>
+</li>
+<li>
+<span class="checkbox unchecked"></span>
+<span>API endpoints</span>
+</li>
+<li>
+<span class="checkbox unchecked"></span>
+<span>Testing</span>
+</li>
+<li>
+<span class="checkbox unchecked"></span>
+<span>Unit tests</span>
+</li>
+<li>
+<span class="checkbox unchecked"></span>
+<span>Integration tests</span>
+</li>
+<li>
+<span class="checkbox unchecked"></span>
+<span>E2E tests</span>
+</li>
+
+</ul>
+
+</ul>
 
 </div>
             <footer class="main-footer">

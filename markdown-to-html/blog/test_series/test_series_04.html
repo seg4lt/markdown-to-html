@@ -3,7 +3,7 @@
     <head>
         <meta charset="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-        <title>Test Series 03</title>
+        <title>Test Series 04 - Code Blocks and Syntax Highlighting</title>
         <link rel="stylesheet" href="/markdown-to-html/styles.css" />
         <link
             rel="stylesheet"
@@ -48,7 +48,7 @@
 
             </header>
             <div class="main-content">
-<h1>Test Series 03</h1>
+<h1>Test Series 04 - Code Blocks and Syntax Highlighting</h1>
 
 
 <section class="card">
@@ -76,7 +76,7 @@
 </li>
 
 <li class="blog-series-item">
-    <span class="number primary-number">3</span>
+    <span class="number secondary-number">3</span>
     <span>
         <a href="/markdown-to-html/blog/test_series/test_series_03.html" class="blog-series-toc-link text-link">
             Test Series 03 - 2024-01-03
@@ -85,7 +85,7 @@
 </li>
 
 <li class="blog-series-item">
-    <span class="number secondary-number">4</span>
+    <span class="number primary-number">4</span>
     <span>
         <a href="/markdown-to-html/blog/test_series/test_series_04.html" class="blog-series-toc-link text-link">
             Test Series 04 - Code Blocks and Syntax Highlighting - 2024-01-04
@@ -196,6 +196,105 @@
 </ol>
 </div>
 </section>
+
+
+<h2>Python Example</h2>
+
+
+<pre class="code-block"><code class="language-python">def fibonacci(n):
+    &quot;&quot;&quot;Generate Fibonacci sequence up to n terms.&quot;&quot;&quot;
+    a, b = 0, 1
+    sequence = []
+    for _ in range(n):
+        sequence.append(a)
+        a, b = b, a + b
+    return sequence
+
+# Usage
+result = fibonacci(10)
+print(f&quot;Fibonacci sequence: {result}&quot;)
+</code></pre> 
+
+
+<h2>Rust Example</h2>
+
+
+<pre class="code-block"><code class="language-rust">use std::collections::HashMap;
+
+fn count_words(text: &amp;str) -&gt; HashMap&lt;&amp;str, usize&gt; {
+    let mut counts = HashMap::new();
+    for word in text.split_whitespace() {
+        *counts.entry(word).or_insert(0) += 1;
+    }
+    counts
+}
+
+fn main() {
+    let text = &quot;hello world hello rust world&quot;;
+    let counts = count_words(text);
+    println!(&quot;{:?}&quot;, counts);
+}
+</code></pre> 
+
+
+<h2>JavaScript/TypeScript Example</h2>
+
+
+<pre class="code-block"><code class="language-typescript">interface User {
+  id: number;
+  name: string;
+  email: string;
+}
+
+class UserService {
+  private users: User[] = [];
+
+  addUser(user: User): void {
+    this.users.push(user);
+  }
+
+  findUserById(id: number): User | undefined {
+    return this.users.find(u =&gt; u.id === id);
+  }
+
+  getAllUsers(): User[] {
+    return [...this.users];
+  }
+}
+</code></pre> 
+
+
+<h2>Shell Script Example</h2>
+
+
+<pre class="code-block"><code class="language-bash">#!/bin/bash
+
+# Process files in directory
+for file in *.md; do
+    if [ -f &quot;$file&quot; ]; then
+        echo &quot;Processing: $file&quot;
+        # Convert markdown to HTML
+        pandoc &quot;$file&quot; -o &quot;${file%.md}.html&quot;
+    fi
+done
+</code></pre> 
+
+
+<h2>SQL Example</h2>
+
+
+<pre class="code-block"><code class="language-sql">-- Complex query with joins and aggregations
+SELECT 
+    u.username,
+    COUNT(p.id) as post_count,
+    MAX(p.created_at) as latest_post
+FROM users u
+LEFT JOIN posts p ON u.id = p.user_id
+WHERE u.created_at &gt; &#39;2025-01-01&#39;
+GROUP BY u.id, u.username
+HAVING COUNT(p.id) &gt; 5
+ORDER BY post_count DESC;
+</code></pre> 
 
 </div>
             <footer class="main-footer">
