@@ -2,11 +2,11 @@
 {
   "title": "Test Series 01",
   "description": "This is the first test series markdown file.",
-  "date": "2025-12-15",
-  "index": 10
+  "date": "2024-01-01",
+  "index": 1
 }
 ```
 
 # Test Series 01
 
-{{ @@blog_series_toc }}
+{{ @@blog_series_toc 5}}

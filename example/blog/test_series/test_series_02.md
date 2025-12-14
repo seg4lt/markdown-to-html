@@ -2,8 +2,8 @@
 {
   "title": "Test Series 02",
   "description": "This is the second test series markdown file.",
-  "date": "2025-12-16",
-  "index": 4
+  "date": "2024-01-02",
+  "index": 2
 }
 ```
 
