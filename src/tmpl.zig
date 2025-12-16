@@ -65,12 +65,12 @@ pub const DEFAULT_STYLES_CSS =
 \\body {
 \\    background-color: var(--bg-background);
 \\    color: var(--text-foreground);
-\\    font-family: "Geist Mono", monospace;
+\\    font-family: "Cascadia Code", monospace;
 \\    min-height: 100vh;
 \\    padding: 24px;
 \\}
 \\code {
-\\    font-family: "Cascadia Code", monospace;
+\\    font-family: "Iosevka", monospace;
 \\    border-radius: 4px;
 \\    /*border: 2px solid var(--text-foreground);*/
 \\    background-color: var(--code-background-color);
@@ -134,7 +134,7 @@ pub const DEFAULT_STYLES_CSS =
 \\    gap: 1em;
 \\    flex-wrap: wrap;
 \\}
-\\.nav-links > li > a {
+\\.nav-links>li>a {
 \\    background-color: var(--nav-primary-color);
 \\}
 \\/* ============================================
@@ -407,8 +407,8 @@ pub const DEFAULT_STYLES_CSS =
 \\    align-items: flex-start;
 \\    gap: 12px;
 \\}
-\\.normal-ordered-list li > span:last-child,
-\\.normal-ordered-list li > div {
+\\.normal-ordered-list li>span:last-child,
+\\.normal-ordered-list li>div {
 \\    line-height: 1.6;
 \\}
 \\.number {
@@ -476,8 +476,8 @@ pub const DEFAULT_STYLES_CSS =
 \\    align-items: flex-start;
 \\    gap: 12px;
 \\}
-\\.normal-unordered-list li > span:last-child,
-\\.normal-unordered-list li > div {
+\\.normal-unordered-list li>span:last-child,
+\\.normal-unordered-list li>div {
 \\    line-height: 1.6;
 \\}
 \\.bullet {
@@ -542,7 +542,7 @@ pub const DEFAULT_STYLES_CSS =
 \\    align-items: flex-start;
 \\    gap: 12px;
 \\}
-\\.normal-task-list li > span:last-child {
+\\.normal-task-list li>span:last-child {
 \\    line-height: 1.6;
 \\    color: var(--text-foreground);
 \\}
@@ -573,7 +573,7 @@ pub const DEFAULT_STYLES_CSS =
 \\    border: 2px solid var(--text-foreground);
 \\    background-color: var(--code-background-color);
 \\    padding: 4px 8px;
-\\    font-family: "Cascadia Code", monospace;
+\\    font-family: "Iosevka", monospace;
 \\    font-size: 0.875rem;
 \\    font-weight: 700;
 \\    box-shadow: 2px 2px 0px 0px var(--box-shadow-color);
@@ -595,55 +595,64 @@ pub const DEFAULT_TASK_LIST_HTML =
 pub const DEFAULT_BASE_HTML = 
 \\<!doctype html>
 \\<html lang="en">
-\\    <head>
-\\        <meta charset="UTF-8" />
-\\        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-\\        <title>{{title}}</title>
-\\        <link rel="stylesheet" href="{{web_root}}/styles.css" />
-\\        <link
-\\            rel="stylesheet"
-\\            href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/styles/github-dark.min.css"
-\\        />
-\\        <link rel="preconnect" href="https://fonts.googleapis.com" />
-\\        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-\\        <link
-\\            href="https://fonts.googleapis.com/css2?family=Cascadia+Code:ital,wght@0,200..700;1,200..700&display=swap"
-\\            rel="stylesheet"
-\\        />
-\\        <link
-\\            href="https://fonts.googleapis.com/css2?family=Geist+Mono:wght@400;700;900&display=swap"
-\\            rel="stylesheet"
-\\        />
-\\        <script
-\\            defer
-\\            src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/highlight.min.js"
-\\        ></script>
-\\    </head>
-\\    <body>
-\\        <div class="global-container">
-\\            <header class="main-header">
-\\                <h1 class="main-title">{{app_name}}</h1>
-\\                <p class="main-subtitle">{{app_subtitle}}</p>
-\\                {{main_nav}}
-\\            </header>
-\\            <div class="main-content">{{content}}</div>
-\\            <footer class="main-footer">
-\\                <div class="container">
-\\                    <p>
-\\                        &copy; <span id="this-year"></span> seg4lt. Markdown to
-\\                        html generator written in Zig
-\\                    </p>
-\\                </div>
-\\            </footer>
-\\            <script>
-\\                document.addEventListener("DOMContentLoaded", (event) => {
-\\                    document.getElementById("this-year").textContent =
-\\                        new Date().getFullYear();
-\\                    hljs.highlightAll();
-\\                });
-\\            </script>
-\\        </div>
-\\    </body>
+\\<head>
+\\    <meta charset="UTF-8" />
+\\    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+\\    <title>{{title}}</title>
+\\    <link rel="stylesheet" href="{{web_root}}/styles.css" />
+\\    <link rel="stylesheet"
+\\        href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/styles/github-dark.min.css" />
+\\    <link rel="preconnect" href="https://fonts.googleapis.com" />
+\\    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+\\    <link href="https://fonts.googleapis.com/css2?family=Cascadia+Code:ital,wght@0,200..700;1,200..700&display=swap"
+\\        rel="stylesheet" />
+\\    <style>
+\\        /* iosevka-latin-400-normal */
+\\        @font-face {
+\\            font-family: 'Iosevka';
+\\            font-style: normal;
+\\            font-display: swap;
+\\            font-weight: 400;
+\\            src: url(https://cdn.jsdelivr.net/fontsource/fonts/iosevka@latest/latin-400-normal.woff2) format('woff2'),
+\\                url(https://cdn.jsdelivr.net/fontsource/fonts/iosevka@latest/latin-400-normal.woff) format('woff');
+\\        }
+\\        /* iosevka-latin-700-normal */
+\\        @font-face {
+\\            font-family: 'Iosevka';
+\\            font-style: normal;
+\\            font-display: swap;
+\\            font-weight: 700;
+\\            src: url(https://cdn.jsdelivr.net/fontsource/fonts/iosevka@latest/latin-700-normal.woff2) format('woff2'),
+\\                url(https://cdn.jsdelivr.net/fontsource/fonts/iosevka@latest/latin-700-normal.woff) format('woff');
+\\        }
+\\    </style>
+\\    <script defer src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/highlight.min.js"></script>
+\\</head>
+\\<body>
+\\    <div class="global-container">
+\\        <header class="main-header">
+\\            <h1 class="main-title">{{app_name}}</h1>
+\\            <p class="main-subtitle">{{app_subtitle}}</p>
+\\            {{main_nav}}
+\\        </header>
+\\        <div class="main-content">{{content}}</div>
+\\        <footer class="main-footer">
+\\            <div class="container">
+\\                <p>
+\\                    &copy; <span id="this-year"></span> seg4lt. Markdown to
+\\                    html generator written in Zig
+\\                </p>
+\\            </div>
+\\        </footer>
+\\        <script>
+\\            document.addEventListener("DOMContentLoaded", (event) => {
+\\                document.getElementById("this-year").textContent =
+\\                    new Date().getFullYear();
+\\                hljs.highlightAll();
+\\            });
+\\        </script>
+\\    </div>
+\\</body>
 \\</html>
 \\
 ;

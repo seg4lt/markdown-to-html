@@ -1,35 +1,47 @@
 <!doctype html>
 <html lang="en">
-    <head>
-        <meta charset="UTF-8" />
-        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-        <title>Test Series 12 - Mixed Complex Content</title>
-        <link rel="stylesheet" href="/markdown-to-html/styles.css" />
-        <link
-            rel="stylesheet"
-            href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/styles/github-dark.min.css"
-        />
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-        <link
-            href="https://fonts.googleapis.com/css2?family=Cascadia+Code:ital,wght@0,200..700;1,200..700&display=swap"
-            rel="stylesheet"
-        />
-        <link
-            href="https://fonts.googleapis.com/css2?family=Geist+Mono:wght@400;700;900&display=swap"
-            rel="stylesheet"
-        />
-        <script
-            defer
-            src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/highlight.min.js"
-        ></script>
-    </head>
-    <body>
-        <div class="global-container">
-            <header class="main-header">
-                <h1 class="main-title">m2h</h1>
-                <p class="main-subtitle">Markdown to HTML generator written in Zig</p>
-                <nav class="main-nav">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Test Series 12 - Mixed Complex Content</title>
+    <link rel="stylesheet" href="/markdown-to-html/styles.css" />
+    <link rel="stylesheet"
+        href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/styles/github-dark.min.css" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Cascadia+Code:ital,wght@0,200..700;1,200..700&display=swap"
+        rel="stylesheet" />
+    <style>
+        /* iosevka-latin-400-normal */
+        @font-face {
+            font-family: 'Iosevka';
+            font-style: normal;
+            font-display: swap;
+            font-weight: 400;
+            src: url(https://cdn.jsdelivr.net/fontsource/fonts/iosevka@latest/latin-400-normal.woff2) format('woff2'),
+                url(https://cdn.jsdelivr.net/fontsource/fonts/iosevka@latest/latin-400-normal.woff) format('woff');
+        }
+
+        /* iosevka-latin-700-normal */
+        @font-face {
+            font-family: 'Iosevka';
+            font-style: normal;
+            font-display: swap;
+            font-weight: 700;
+            src: url(https://cdn.jsdelivr.net/fontsource/fonts/iosevka@latest/latin-700-normal.woff2) format('woff2'),
+                url(https://cdn.jsdelivr.net/fontsource/fonts/iosevka@latest/latin-700-normal.woff) format('woff');
+        }
+    </style>
+    <script defer src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/highlight.min.js"></script>
+</head>
+
+<body>
+    <div class="global-container">
+        <header class="main-header">
+            <h1 class="main-title">m2h</h1>
+            <p class="main-subtitle">Markdown to HTML generator written in Zig</p>
+            <nav class="main-nav">
     <ul class="nav-links">
         <li><a href="/markdown-to-html/" class="button-link" {{target}}>Home</a>
 </li>
@@ -49,8 +61,8 @@
     </ul>
 </nav>
 
-            </header>
-            <div class="main-content">
+        </header>
+        <div class="main-content">
 <h1>Test Series 12 - Mixed Complex Content</h1>
 
 
@@ -314,21 +326,22 @@ Here&#39;s a [link with `code`](https://example.com) in the text.
 </code></pre> 
 
 </div>
-            <footer class="main-footer">
-                <div class="container">
-                    <p>
-                        &copy; <span id="this-year"></span> seg4lt. Markdown to
-                        html generator written in Zig
-                    </p>
-                </div>
-            </footer>
-            <script>
-                document.addEventListener("DOMContentLoaded", (event) => {
-                    document.getElementById("this-year").textContent =
-                        new Date().getFullYear();
-                    hljs.highlightAll();
-                });
-            </script>
-        </div>
-    </body>
+        <footer class="main-footer">
+            <div class="container">
+                <p>
+                    &copy; <span id="this-year"></span> seg4lt. Markdown to
+                    html generator written in Zig
+                </p>
+            </div>
+        </footer>
+        <script>
+            document.addEventListener("DOMContentLoaded", (event) => {
+                document.getElementById("this-year").textContent =
+                    new Date().getFullYear();
+                hljs.highlightAll();
+            });
+        </script>
+    </div>
+</body>
+
 </html>
