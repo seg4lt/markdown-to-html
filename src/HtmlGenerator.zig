@@ -274,6 +274,9 @@ const HtmlGenerator = struct {
         if (mem.eql(u8, marker.name, tmpl.MAGIC_GRID_END)) {
             return try self.template_manager.get(tmpl.TMPL_GRID_END_HTML.name);
         }
+        if (mem.eql(u8, marker.name, tmpl.MAGIC_SERIES_LIST)) {
+            return try self.generateSeriesList();
+        }
         std.log.err("unknown magic marker -- `{s}`", .{marker.name});
         return Error.UnknownMagicMarker;
     }
@@ -321,7 +324,7 @@ const HtmlGenerator = struct {
         }.lessThan);
         // find current document position in sorted list
         // this is done, so we can find center point to pull items around it, also for making primary and secondary items
-        const current_idx: ?usize = blk: {
+        const current_idx: usize = blk: {
             for (blog_list_sorted_index, 0..) |idx, i| {
                 if (std.mem.eql(u8, blog_list.items[idx].file_name, self.document.file_name)) {
                     break :blk i;
@@ -437,6 +440,77 @@ const HtmlGenerator = struct {
             &[_][]const u8{ "Recent Blogs", "primary", list_accum.items },
         );
         return blog_list_html;
+    }
+
+    fn generateSeriesList(self: *@This()) ![]u8 {
+        var series_map = std.StringHashMap(struct {
+            title: []const u8,
+            link: []const u8,
+            first_index: u8,
+        }).init(self.arena);
+
+        var groups_iter = self.groups.iterator();
+        while (groups_iter.next()) |entry| {
+            const path = entry.key_ptr.*;
+            if (!mem.startsWith(u8, path, "blog/") or mem.eql(u8, path, "blog")) continue;
+
+            const docs = entry.value_ptr.*;
+            if (docs.items.len == 0) continue;
+
+            var first_doc: ?*const DocInfo = null;
+            var first_index: u8 = 255;
+            for (docs.items) |*doc| {
+                if (doc.frontmatter.index) |idx| {
+                    if (idx < first_index) {
+                        first_index = idx;
+                        first_doc = doc;
+                    }
+                } else if (first_doc == null) {
+                    first_doc = doc;
+                    first_index = 255;
+                }
+            }
+
+            if (first_doc) |doc| {
+                const link = try std.fmt.allocPrint(
+                    self.arena,
+                    "{s}/{s}/{s}.html",
+                    .{
+                        self.args.web_root,
+                        doc.file_path,
+                        doc.file_name[0 .. doc.file_name.len - 3], // remove `.md`
+                    },
+                );
+                try series_map.put(path, .{
+                    .title = doc.frontmatter.title,
+                    .link = link,
+                    .first_index = first_index,
+                });
+            }
+        }
+
+        // Generate the HTML output
+        var list_accum: ArrayList(u8) = .empty;
+        var map_iter = series_map.iterator();
+        while (map_iter.next()) |entry| {
+            const series = entry.value_ptr.*;
+            const item_html = try TemplateManager.replacePlaceholders(
+                self.arena,
+                try self.template_manager.get(tmpl.TMPL_SERIES_LIST_ITEM_HTML.name),
+                &[_][]const u8{ "{{link}}", "{{title}}" },
+                &[_][]const u8{ series.link, series.title },
+            );
+            try list_accum.appendSlice(self.arena, item_html);
+            try list_accum.appendSlice(self.arena, "\n");
+        }
+
+        const series_list_html = try TemplateManager.replacePlaceholders(
+            self.arena,
+            try self.template_manager.get(tmpl.TMPL_CARD_HTML.name),
+            &[_][]const u8{ "{{title}}", "{{variant}}", "{{content}}" },
+            &[_][]const u8{ "All Series", "primary", list_accum.items },
+        );
+        return series_list_html;
     }
 
     fn generateCodeBlock(self: *@This(), code_block: Node.CodeBlock) ![]u8 {

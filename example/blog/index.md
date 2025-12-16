@@ -2,7 +2,8 @@
 {
   "title": "This is blog page",
   "description": "Blog page in markdown.",
-  "date": "2025-12-01"
+  "date": "2025-12-01",
+  "index": 2
 }
 ```
 

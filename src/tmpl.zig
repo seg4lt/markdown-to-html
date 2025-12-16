@@ -14,8 +14,18 @@
  pub const MAGIC_FRONTMATTER = "@@frontmatter";
  pub const MAGIC_GRID_START = "@@grid_start";
  pub const MAGIC_GRID_END = "@@grid_end";
+ pub const MAGIC_SERIES_LIST = "@@series_list";
  
  pub const Template = struct { name: []const u8, content: []const u8 };
+ pub const TMPL_SERIES_LIST_ITEM_HTML: Template = .{ .name = "series_list_item.html", .content = DEFAULT_SERIES_LIST_ITEM_HTML };
+
+pub const DEFAULT_SERIES_LIST_ITEM_HTML = 
+\\<a href="{{link}}" class="series-list-item-link button-link">
+\\    <div class="series-list-item-title">{{title}}</div>
+\\</a>
+\\
+;
+
  pub const TMPL_BUTTON_LINK_HTML: Template = .{ .name = "button_link.html", .content = DEFAULT_BUTTON_LINK_HTML };
 
 pub const DEFAULT_BUTTON_LINK_HTML = 
@@ -795,6 +805,7 @@ pub const DEFAULT_BLOG_LIST_ITEM_HTML =
 ;
 
 pub const TEMPLATES = [_]Template{
+    TMPL_SERIES_LIST_ITEM_HTML,
     TMPL_BUTTON_LINK_HTML,
     TMPL_HEADING_HTML,
     TMPL_STYLES_CSS,

@@ -1,3 +1,13 @@
+pub fn parseFrontmatterFromPath(mem_ctx: *MemCtx, file_path: []const u8) ?Frontmatter {
+    const content = std.fs.cwd().readFileAlloc(mem_ctx.scratch, file_path, common.MAX_FILE_SIZE) catch return null;
+    var parser = Parser.init(mem_ctx, "", "", content);
+    while (!parser.tokenizer.isAtEnd()) {
+        parser.parseNextNode() catch return null;
+        if (parser.frontmatter) |fm| return fm.value;
+    }
+    return null;
+}
+
 pub fn parseFromDirPath(
     mem_ctx: *MemCtx,
     base_path: []const u8,
