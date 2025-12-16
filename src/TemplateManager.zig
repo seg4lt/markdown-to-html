@@ -61,29 +61,53 @@ pub fn getMainNav(self: *Self) ![]const u8 {
     var dir = try std.fs.cwd().openDir(self.args.md_base_path, .{ .iterate = true });
     defer dir.close();
 
-    var top_level_dirs: ArrayList([]const u8) = .empty;
-    try top_level_dirs.append(self.mem_ctx.scratch, "__home__");
+    const NavItem = struct {
+        name: []const u8,
+        nav_index: u8,
+    };
+    var nav_items: ArrayList(NavItem) = .empty;
+
+    try nav_items.append(self.mem_ctx.scratch, .{ .name = "__home__", .nav_index = 0 });
 
     var it = dir.iterate();
-
     while (try it.next()) |dir_entry| {
         if (dir_entry.kind != .directory) continue;
         if (mem.eql(u8, dir_entry.name, self.args.tmpl_base_path)) continue;
         if (mem.startsWith(u8, dir_entry.name, "__")) continue;
 
-        try top_level_dirs.append(self.mem_ctx.scratch, dir_entry.name);
+        var nav_index: u8 = 255; // default to last
+        const index_path = try std.fs.path.join(self.mem_ctx.scratch, &[_][]const u8{
+            self.args.md_base_path,
+            dir_entry.name,
+            "index.md",
+        });
+
+        if (Parser.parseFrontmatterFromPath(self.mem_ctx, index_path)) |fm| {
+            if (fm.index) |idx| {
+                nav_index = idx;
+            }
+        }
+
+        const name_copy = try self.mem_ctx.scratch.dupe(u8, dir_entry.name);
+        try nav_items.append(self.mem_ctx.scratch, .{ .name = name_copy, .nav_index = nav_index });
     }
 
+    std.mem.sort(NavItem, nav_items.items, {}, struct {
+        fn lessThan(_: void, a: NavItem, b: NavItem) bool {
+            return a.nav_index < b.nav_index;
+        }
+    }.lessThan);
+
     var nav_items_acc: ArrayList(u8) = .empty;
-    for (top_level_dirs.items, 0..) |dir_name, i| {
-        const is_home = mem.eql(u8, dir_name, "__home__");
-        const link = try std.fmt.allocPrint(self.mem_ctx.scratch, "{s}/{s}", .{ self.args.web_root, if (is_home) "" else dir_name });
+    for (nav_items.items, 0..) |item, i| {
+        const is_home = mem.eql(u8, item.name, "__home__");
+        const link = try std.fmt.allocPrint(self.mem_ctx.scratch, "{s}/{s}", .{ self.args.web_root, if (is_home) "" else item.name });
 
         const nav_link = try replacePlaceholders(
             self.mem_ctx.scratch,
             try self.get(tmpl.TMPL_BUTTON_LINK_HTML.name),
             &[_][]const u8{ "{{link}}", "{{text}}" },
-            &[_][]const u8{ link, if (is_home) "Home" else dir_name },
+            &[_][]const u8{ link, if (is_home) "Home" else item.name },
         );
 
         const nav_item = try replacePlaceholders(
@@ -94,7 +118,7 @@ pub fn getMainNav(self: *Self) ![]const u8 {
         );
 
         try nav_items_acc.appendSlice(self.mem_ctx.scratch, nav_item);
-        if (i < top_level_dirs.items.len - 1) {
+        if (i < nav_items.items.len - 1) {
             try nav_items_acc.appendSlice(self.mem_ctx.scratch, "\n");
         }
     }
@@ -105,7 +129,6 @@ pub fn getMainNav(self: *Self) ![]const u8 {
         &[_][]const u8{"{{nav_items}}"},
         &[_][]const u8{nav_items_acc.items},
     );
-    // once I write replacePlaceholder to not use loop I can just pass in global arena above
     const nav_menu_global_owned = try self.mem_ctx.global.dupe(u8, nav_menu);
     try self.template_cache.put(NAV_MENU_KEY, nav_menu_global_owned);
     return nav_menu;
@@ -197,6 +220,7 @@ pub fn replacePlaceholders(
 
 const std = @import("std");
 const tmpl = @import("tmpl.zig");
+const Parser = @import("Parser.zig");
 const common = @import("common.zig");
 const MemCtx = common.MemCtx;
 const Clap = common.AppArgs;

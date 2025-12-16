@@ -84,6 +84,7 @@ fn generateTmplFile(allocator: Allocator) !void {
         \\ pub const MAGIC_FRONTMATTER = "@@frontmatter";
         \\ pub const MAGIC_GRID_START = "@@grid_start";
         \\ pub const MAGIC_GRID_END = "@@grid_end";
+        \\ pub const MAGIC_SERIES_LIST = "@@series_list";
         \\ 
         \\ pub const Template = struct { name: []const u8, content: []const u8 };
         \\
