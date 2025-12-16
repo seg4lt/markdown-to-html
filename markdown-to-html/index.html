@@ -1,35 +1,47 @@
 <!doctype html>
 <html lang="en">
-    <head>
-        <meta charset="UTF-8" />
-        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-        <title>Example Markdown</title>
-        <link rel="stylesheet" href="/markdown-to-html/styles.css" />
-        <link
-            rel="stylesheet"
-            href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/styles/github-dark.min.css"
-        />
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-        <link
-            href="https://fonts.googleapis.com/css2?family=Cascadia+Code:ital,wght@0,200..700;1,200..700&display=swap"
-            rel="stylesheet"
-        />
-        <link
-            href="https://fonts.googleapis.com/css2?family=Geist+Mono:wght@400;700;900&display=swap"
-            rel="stylesheet"
-        />
-        <script
-            defer
-            src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/highlight.min.js"
-        ></script>
-    </head>
-    <body>
-        <div class="global-container">
-            <header class="main-header">
-                <h1 class="main-title">m2h</h1>
-                <p class="main-subtitle">Markdown to HTML generator written in Zig</p>
-                <nav class="main-nav">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Example Markdown</title>
+    <link rel="stylesheet" href="/markdown-to-html/styles.css" />
+    <link rel="stylesheet"
+        href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/styles/github-dark.min.css" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Cascadia+Code:ital,wght@0,200..700;1,200..700&display=swap"
+        rel="stylesheet" />
+    <style>
+        /* iosevka-latin-400-normal */
+        @font-face {
+            font-family: 'Iosevka';
+            font-style: normal;
+            font-display: swap;
+            font-weight: 400;
+            src: url(https://cdn.jsdelivr.net/fontsource/fonts/iosevka@latest/latin-400-normal.woff2) format('woff2'),
+                url(https://cdn.jsdelivr.net/fontsource/fonts/iosevka@latest/latin-400-normal.woff) format('woff');
+        }
+
+        /* iosevka-latin-700-normal */
+        @font-face {
+            font-family: 'Iosevka';
+            font-style: normal;
+            font-display: swap;
+            font-weight: 700;
+            src: url(https://cdn.jsdelivr.net/fontsource/fonts/iosevka@latest/latin-700-normal.woff2) format('woff2'),
+                url(https://cdn.jsdelivr.net/fontsource/fonts/iosevka@latest/latin-700-normal.woff) format('woff');
+        }
+    </style>
+    <script defer src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/highlight.min.js"></script>
+</head>
+
+<body>
+    <div class="global-container">
+        <header class="main-header">
+            <h1 class="main-title">m2h</h1>
+            <p class="main-subtitle">Markdown to HTML generator written in Zig</p>
+            <nav class="main-nav">
     <ul class="nav-links">
         <li><a href="/markdown-to-html/" class="button-link" {{target}}>Home</a>
 </li>
@@ -49,8 +61,8 @@
     </ul>
 </nav>
 
-            </header>
-            <div class="main-content">
+        </header>
+        <div class="main-content">
 <h1>m2h</h1>
 
 
@@ -174,7 +186,13 @@
     <div class="card-header primary-header">
         <h2 class="card-title">Recent Blogs</h2>
     </div>
-    <div class="card-content"><a href="/markdown-to-html/blog/list.html" class="blog-list-item-link button-link">
+    <div class="card-content"><a href="/markdown-to-html/blog/git-diff-viewer.html" class="blog-list-item-link button-link">
+    <div class="blog-list-item-title">Git Diff Viewer</div>
+    <div class="blog-list-item-desc">Added git-diff code block support with syntax highlighting</div>
+    <div class="blog-list-item-date">2025-12-16</div>
+</a>
+
+<a href="/markdown-to-html/blog/list.html" class="blog-list-item-link button-link">
     <div class="blog-list-item-title">List Example</div>
     <div class="blog-list-item-desc">List example in markdown.</div>
     <div class="blog-list-item-date">2025-12-01</div>
@@ -184,12 +202,6 @@
     <div class="blog-list-item-title">This is blog page</div>
     <div class="blog-list-item-desc">Blog page in markdown.</div>
     <div class="blog-list-item-date">2025-12-01</div>
-</a>
-
-<a href="/markdown-to-html/blog/example_with_html.html" class="blog-list-item-link button-link">
-    <div class="blog-list-item-title">Test page for html content</div>
-    <div class="blog-list-item-desc">A blog post with html content.</div>
-    <div class="blog-list-item-date">2025-11-16</div>
 </a>
 
 </div>
@@ -307,21 +319,22 @@ your content here...
 </ul>
 
 </div>
-            <footer class="main-footer">
-                <div class="container">
-                    <p>
-                        &copy; <span id="this-year"></span> seg4lt. Markdown to
-                        html generator written in Zig
-                    </p>
-                </div>
-            </footer>
-            <script>
-                document.addEventListener("DOMContentLoaded", (event) => {
-                    document.getElementById("this-year").textContent =
-                        new Date().getFullYear();
-                    hljs.highlightAll();
-                });
-            </script>
-        </div>
-    </body>
+        <footer class="main-footer">
+            <div class="container">
+                <p>
+                    &copy; <span id="this-year"></span> seg4lt. Markdown to
+                    html generator written in Zig
+                </p>
+            </div>
+        </footer>
+        <script>
+            document.addEventListener("DOMContentLoaded", (event) => {
+                document.getElementById("this-year").textContent =
+                    new Date().getFullYear();
+                hljs.highlightAll();
+            });
+        </script>
+    </div>
+</body>
+
 </html>
