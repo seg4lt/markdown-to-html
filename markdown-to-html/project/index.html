@@ -40,7 +40,7 @@
     <div class="global-container">
         <header class="main-header">
             <h1 class="main-title">m2h</h1>
-            <p class="main-subtitle">Markdown to HTML generator written in Zig</p>
+            <p class="main-subtitle"></p>
             <nav class="main-nav">
     <ul class="nav-links">
         <li><a href="/markdown-to-html/" class="button-link" {{target}}>Home</a>
@@ -82,7 +82,146 @@
                 document.getElementById("this-year").textContent =
                     new Date().getFullYear();
                 hljs.highlightAll();
+                initDiffViewers();
             });
+
+            // ============================================
+            // DIFF VIEWER
+            // ============================================
+            const DIFF_ICONS = { collapsed: '▶', expanded: '◀' };
+
+            function initDiffViewers() {
+                document.querySelectorAll('pre.code-block code.language-diff, pre.code-block code.language-git-diff').forEach(codeEl => {
+                    const files = parsePatch(codeEl.textContent);
+                    if (files.length <= 1) return;
+
+                    const viewer = createDiffViewer(files);
+                    codeEl.closest('pre').replaceWith(viewer);
+                });
+            }
+
+            function createDiffViewer(files) {
+                const wrapper = createElement('div', 'diff-viewer');
+                const sidebar = createSidebar(files, wrapper);
+                const content = createContentArea(files);
+
+                wrapper.append(sidebar, content);
+                return wrapper;
+            }
+
+            function createSidebar(files, wrapper) {
+                const container = createElement('div', 'diff-file-list-container');
+                const toggle = createElement('button', 'diff-toggle-btn');
+                toggle.innerHTML = DIFF_ICONS.expanded;
+                toggle.title = 'Toggle file list';
+                toggle.onclick = () => {
+                    const collapsed = wrapper.classList.toggle('collapsed');
+                    toggle.innerHTML = collapsed ? DIFF_ICONS.collapsed : DIFF_ICONS.expanded;
+                };
+
+                const list = createElement('div', 'diff-file-list');
+                files.forEach((file, i) => {
+                    const item = createElement('div', `diff-file-item${i === 0 ? ' active' : ''}`);
+                    item.textContent = file.name;
+                    item.dataset.index = i;
+                    item.onclick = () => selectFile(wrapper, i);
+                    list.appendChild(item);
+                });
+
+                container.append(toggle, list);
+                return container;
+            }
+
+            function createContentArea(files) {
+                const area = createElement('div', 'diff-content-area');
+                files.forEach((file, i) => {
+                    const pre = createElement('pre', `code-block diff-file-content${i === 0 ? ' active' : ''}`);
+                    pre.dataset.index = i;
+                    pre.innerHTML = renderDiff(file.content);
+                    area.appendChild(pre);
+                });
+                return area;
+            }
+
+            function createElement(tag, className) {
+                const el = document.createElement(tag);
+                if (className) el.className = className;
+                return el;
+            }
+
+            function selectFile(wrapper, index) {
+                wrapper.querySelectorAll('.diff-file-item, .diff-file-content').forEach(el => {
+                    el.classList.toggle('active', +el.dataset.index === index);
+                });
+            }
+
+            function parsePatch(content) {
+                const files = [];
+                let currentFile = null;
+                let currentContent = [];
+
+                for (const line of content.split('\n')) {
+                    const fileMatch = line.match(/^diff --git a\/(.+?) b\//) ||
+                        (line.startsWith('--- a/') && !currentFile ? line.match(/^--- a\/(.+)/) : null);
+
+                    if (fileMatch) {
+                        if (currentFile) files.push({ name: currentFile, content: currentContent.join('\n') });
+                        currentFile = fileMatch[1];
+                        currentContent = [line];
+                    } else if (currentFile) {
+                        currentContent.push(line);
+                    } else if (line.startsWith('--- ')) {
+                        currentFile = line.slice(4).replace('a/', '');
+                        currentContent = [line];
+                    }
+                }
+                if (currentFile) files.push({ name: currentFile, content: currentContent.join('\n') });
+                return files;
+            }
+
+            function renderDiff(content) {
+                let oldLine = 0, newLine = 0;
+
+                return content.split('\n').map(line => {
+                    const escaped = escapeHtml(line) || ' ';
+
+                    // Hunk header - parse line numbers
+                    if (line.startsWith('@@')) {
+                        const match = line.match(/@@ -(\d+)(?:,\d+)? \+(\d+)(?:,\d+)? @@/);
+                        if (match) [, oldLine, newLine] = match.map(Number);
+                        return diffLine('hunk', '', '', escaped);
+                    }
+
+                    // Addition
+                    if (line.startsWith('+') && !line.startsWith('+++')) {
+                        return diffLine('add', '', newLine++, escaped);
+                    }
+
+                    // Removal
+                    if (line.startsWith('-') && !line.startsWith('---')) {
+                        return diffLine('remove', oldLine++, '', escaped);
+                    }
+
+                    // Header lines (no line numbers)
+                    if (/^(diff |index |--- |\+\+\+ )/.test(line)) {
+                        return diffLine('context', '', '', escaped);
+                    }
+
+                    // Context line
+                    return diffLine('context', oldLine++, newLine++, escaped);
+                }).join('');
+            }
+
+            function diffLine(type, oldNum, newNum, content) {
+                return `<span class="diff-line diff-${type}">` +
+                    `<span class="diff-line-num">${oldNum}</span>` +
+                    `<span class="diff-line-num">${newNum}</span>` +
+                    `<span class="diff-line-content">${content}</span></span>`;
+            }
+
+            function escapeHtml(str) {
+                return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+            }
         </script>
     </div>
 </body>

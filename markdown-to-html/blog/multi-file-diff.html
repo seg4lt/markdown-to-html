@@ -1,0 +1,614 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Multi-File Diff Viewer</title>
+    <link rel="stylesheet" href="/markdown-to-html/styles.css" />
+    <link rel="stylesheet"
+        href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/styles/github-dark.min.css" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Cascadia+Code:ital,wght@0,200..700;1,200..700&display=swap"
+        rel="stylesheet" />
+    <style>
+        /* iosevka-latin-400-normal */
+        @font-face {
+            font-family: 'Iosevka';
+            font-style: normal;
+            font-display: swap;
+            font-weight: 400;
+            src: url(https://cdn.jsdelivr.net/fontsource/fonts/iosevka@latest/latin-400-normal.woff2) format('woff2'),
+                url(https://cdn.jsdelivr.net/fontsource/fonts/iosevka@latest/latin-400-normal.woff) format('woff');
+        }
+
+        /* iosevka-latin-700-normal */
+        @font-face {
+            font-family: 'Iosevka';
+            font-style: normal;
+            font-display: swap;
+            font-weight: 700;
+            src: url(https://cdn.jsdelivr.net/fontsource/fonts/iosevka@latest/latin-700-normal.woff2) format('woff2'),
+                url(https://cdn.jsdelivr.net/fontsource/fonts/iosevka@latest/latin-700-normal.woff) format('woff');
+        }
+    </style>
+    <script defer src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/highlight.min.js"></script>
+</head>
+
+<body>
+    <div class="global-container">
+        <header class="main-header">
+            <h1 class="main-title">m2h</h1>
+            <p class="main-subtitle"></p>
+            <nav class="main-nav">
+    <ul class="nav-links">
+        <li><a href="/markdown-to-html/" class="button-link" {{target}}>Home</a>
+</li>
+
+<li><a href="/markdown-to-html/blog" class="button-link" {{target}}>blog</a>
+</li>
+
+<li><a href="/markdown-to-html/series" class="button-link" {{target}}>series</a>
+</li>
+
+<li><a href="/markdown-to-html/about" class="button-link" {{target}}>about</a>
+</li>
+
+<li><a href="/markdown-to-html/project" class="button-link" {{target}}>project</a>
+</li>
+
+    </ul>
+</nav>
+
+        </header>
+        <div class="main-content">
+<h1>Multi-File Diff Viewer</h1>
+
+
+<p>When you paste a multi-file git patch into a diff code block, you'll see a file tree on the left. Click any file to view its diff.</p>
+
+
+<h2>Example</h2>
+
+
+<pre class="code-block"><code class="language-diff">diff --git a/src/main.zig b/src/main.zig
+index 37414d1..ca32203 100644
+--- a/src/main.zig
++++ b/src/main.zig
+@@ -5,6 +5,20 @@ const CliArgs = struct {
+     src_path: []const u8,
+     happy: ?bool = null,
+ 
++    subcommand: union(enum) {
++        clone: struct {
++            url: []const u8,
++            depth: i32 = 1,
++
++            pub const __claptain_metadata: claptain.Metadata(@This()) = .{
++                .url = .{ .positional = true },
++            };
++        },
++        push: struct {
++            force: bool = false,
++        },
++    },
++
+     pub const __claptain_metadata: claptain.Metadata(@This()) = .{
+         .src_path = .{
+             .short = &quot;s&quot;,
+@@ -17,8 +31,9 @@ const CliArgs = struct {
+ };
+ 
+ pub fn main() !void {
+-    const args = try claptain.parse(CliArgs, .{});
+-    structPrinter(args);
++    const cla = try claptain.parse(CliArgs, .{});
++    try cla.printHelp();
++    structPrinter(cla.args);
+ }
+ 
+ fn structPrinter(value: anytype) void {
+diff --git a/src/root.zig b/src/root.zig
+index ec09cef..71bcb36 100644
+--- a/src/root.zig
++++ b/src/root.zig
+@@ -44,19 +44,44 @@ pub const ArgInfo = struct {
+     short: ?[]const u8 = null,
+     long: ?[]const u8 = null,
+     description: ?[]const u8 = null,
++    positional: bool = false,
+ };
+ 
+-pub fn parse(comptime T: type, option: ParseOptions) ParseError!T {
++pub fn Cla(comptime T: type) type {
++    return struct {
++        args: T,
++        option: ParseOptions,
++
++        pub fn printHelp(self: *const @This()) !void {
++            var buf: [1024]u8 = undefined;
++            var stderr_state = std.fs.File.stderr().writer(&amp;buf);
++            const parser = ClaptainParser{
++                .writer = if (self.option.override_writer) |writer| writer else &amp;stderr_state.interface,
++                .option = self.option,
++            };
++            try parser.printUsage(T);
++            try parser.flush();
++        }
++    };
++}
++
++pub fn parse(comptime T: type, option: ParseOptions) ParseError!Cla(T) {
+     var iterator = std.process.args();
+     return try parseWithIterator(T, option, &amp;iterator);
+ }
+ 
+-pub fn parseWithIterator(comptime T: type, option: ParseOptions, args_iter: anytype) ParseError!T {
++pub fn parseWithIterator(comptime T: type, option: ParseOptions, args_iter: anytype) ParseError!Cla(T) {
++    return parseWithIteratorInternal(T, option, args_iter, true);
++}
++
++fn parseWithIteratorInternal(comptime T: type, option: ParseOptions, args_iter: anytype, skip_program_name: bool) ParseError!Cla(T) {
+     if (!@hasDecl(@TypeOf(args_iter.*), &quot;next&quot;)) @compileError(&quot;args_iter must have next() decl&quot;);
+     if (@typeInfo(T) != .@&quot;struct&quot;) @compileError(&quot;type passed to parse must be of type struct.&quot;);
+ 
+-    const program_name = args_iter.next();
+-    _ = program_name;
++    if (skip_program_name) {
++        const program_name = args_iter.next();
++        _ = program_name;
++    }
+ 
+     var buf: [1024]u8 = undefined;
+     var stderr_state = std.fs.File.stderr().writer(&amp;buf);
+@@ -95,7 +120,7 @@ pub fn parseWithIterator(comptime T: type, option: ParseOptions, args_iter: anyt
+             return ParseError.UsageRequested;
+         }
+ 
+-        try self.parseFieldValue(T, &amp;result, &amp;fields_seen, arg);
++        try self.parseFieldValue(T, &amp;result, &amp;fields_seen, arg, args_iter);
+     }
+ 
+     // Verify all required arguments are provided
+@@ -118,7 +143,10 @@ pub fn parseWithIterator(comptime T: type, option: ParseOptions, args_iter: anyt
+         return ParseError.RequiredArgsNotProvided;
+     }
+ 
+-    return result;
++    return Cla(T){
++        .args = result,
++        .option = option,
++    };
+ }
+ 
+ const ClaptainParser = struct {
+@@ -137,11 +165,29 @@ const ClaptainParser = struct {
+         return ParseError.InvalidArgument;
+     }
+ 
+-    fn parseFieldValue(self: *const @This(), comptime S: type, result: *S, fields_seen: []bool, arg: []const u8) ParseError!void {
++    fn parseFieldValue(self: *const @This(), comptime S: type, result: *S, fields_seen: []bool, arg: []const u8, args_iter: anytype) ParseError!void {
+         const index_of_equal = std.mem.indexOf(u8, arg, &quot;=&quot;);
+         const field_identifier = if (index_of_equal) |idx| arg[0..idx] else arg;
+ 
+         const arg_length = isShortOrLongArg(field_identifier) catch |err| {
++            // Check for positional args
++            var positional_found = false;
++            inline for (std.meta.fields(S), 0..) |field, i| {
++                if (!positional_found and !fields_seen[i]) {
++                    const arg_info = getArgInfo(S, field.name);
++                    const is_positional = if (arg_info) |info| info.positional else false;
++
++                    if (is_positional) {
++                        // Found the first unseen positional field
++                        try self.matchAndSetPositionalValue(S, result, field, arg, args_iter);
++                        fields_seen[i] = true;
++                        positional_found = true;
++                    }
++                }
++            }
++
++            if (positional_found) return;
++
+             if (!self.option.allow_invalid) {
+                 try self.print(&quot;options should start with `--` or `-` found `{s}`&quot;, .{field_identifier});
+                 return err;
+@@ -170,11 +216,103 @@ const ClaptainParser = struct {
+         }
+     }
+ 
++    fn matchAndSetPositionalValue(
++        self: *const @This(),
++        comptime S: type,
++        result: *S,
++        comptime field: std.builtin.Type.StructField,
++        value_str: []const u8,
++        args_iter: anytype,
++    ) ParseError!void {
++        const actual_type = if (@typeInfo(field.type) == .optional) @typeInfo(field.type).optional.child else field.type;
++
++        switch (@typeInfo(actual_type)) {
++            .pointer =&gt; |ptr| {
++                const is_u8_slice = ptr.size == .slice and ptr.child == u8;
++                if (!is_u8_slice) @compileError(&quot;only []u8 pointer type is supported for string fields.&quot;);
++
++                if (std.mem.startsWith(u8, value_str, &quot;\&quot;&quot;) and std.mem.endsWith(u8, value_str, &quot;\&quot;&quot;)) {
++                    @field(result, field.name) = value_str[1 .. value_str.len - 1];
++                } else {
++                    @field(result, field.name) = value_str;
++                }
++            },
++            .@&quot;union&quot; =&gt; |union_info| {
++                if (union_info.tag_type) |tag_type| {
++                    const TagType = tag_type;
++                    var matched_tag: ?TagType = null;
++                    inline for (std.meta.fields(TagType)) |tag_field| {
++                        if (std.mem.eql(u8, tag_field.name, value_str)) {
++                            matched_tag = @enumFromInt(tag_field.value);
++                        }
++                    }
++
++                    if (matched_tag) |_| {
++                        inline for (union_info.fields) |union_field| {
++                            if (std.mem.eql(u8, union_field.name, value_str)) {
++                                const PayloadType = union_field.type;
++                                if (PayloadType == void) {
++                                    @field(result, field.name) = @unionInit(actual_type, union_field.name, {});
++                                } else {
++                                    const sub_cla = try parseWithIteratorInternal(PayloadType, self.option, args_iter, false);
++                                    @field(result, field.name) = @unionInit(actual_type, union_field.name, sub_cla.args);
++                                }
++                                return;
++                            }
++                        }
++                    }
++                }
++                try self.print(&quot;invalid subcommand &#39;{s}&#39;\n&quot;, .{value_str});
++                try self.printUsage(S);
++                return ParseError.InvalidArgument;
++            },
++            .@&quot;enum&quot; =&gt; |enum_info| {
++                var matched = false;
++                inline for (enum_info.fields) |enum_field| {
++                    if (std.mem.eql(u8, enum_field.name, value_str)) {
++                        @field(result, field.name) = @enumFromInt(enum_field.value);
++                        matched = true;
++                        break;
++                    }
++                }
++                if (!matched) {
++                    try self.print(&quot;invalid value &#39;{s}&#39; for argument &#39;{s}&#39;\n&quot;, .{ value_str, field.name });
++                    try self.printUsage(S);
++                    return ParseError.InvalidArgument;
++                }
++            },
++            .bool =&gt; {
++                if (std.mem.eql(u8, value_str, &quot;true&quot;)) {
++                    @field(result, field.name) = true;
++                } else if (std.mem.eql(u8, value_str, &quot;false&quot;)) {
++                    @field(result, field.name) = false;
++                } else {
++                    try self.print(&quot;invalid boolean value &#39;{s}&#39; for argument &#39;{s}&#39;\n&quot;, .{ value_str, field.name });
++                    try self.printUsage(S);
++                    return ParseError.InvalidArgument;
++                }
++            },
++            .int, .float =&gt; {
++                const value = switch (@typeInfo(actual_type)) {
++                    .int =&gt; std.fmt.parseInt(actual_type, value_str, 10),
++                    .float =&gt; std.fmt.parseFloat(actual_type, value_str),
++                    else =&gt; |tag| @compileError(@tagName(tag) ++ &quot; ** bug ** this should not happen at all&quot;),
++                } catch {
++                    try self.print(&quot;invalid number value &#39;{s}&#39; for argument &#39;{s}&#39;\n&quot;, .{ value_str, field.name });
++                    try self.printUsage(S);
++                    return ParseError.InvalidArgument;
++                };
++                @field(result, field.name) = value;
++            },
++            else =&gt; @compileError(&quot;type not supported: &quot; ++ @typeName(actual_type)),
++        }
++    }
++
+     fn matchAndSetFieldValue(
+         self: *const @This(),
+         comptime S: type,
+         result: *S,
+-        field: std.builtin.Type.StructField,
++        comptime field: std.builtin.Type.StructField,
+         interested_field_name: []const u8, // actual field name to match against
+         arg: []const u8, // full arg string e.g -s=value
+         arg_field_name: []const u8, // user provided arg name - which can be different as it can be overridden
+@@ -238,6 +376,10 @@ const ClaptainParser = struct {
+                     return ParseError.InvalidArgument;
+                 }
+             },
++            .@&quot;union&quot; =&gt; |union_info| {
++                _ = union_info;
++                return false;
++            },
+             .int, .float =&gt; {
+                 if (index_of_equal == null) {
+                     try self.print(&quot;missing value for argument &#39;{s}&#39;\n&quot;, .{arg_field_name});
+@@ -248,7 +390,7 @@ const ClaptainParser = struct {
+                 const value = switch (@typeInfo(actual_type)) {
+                     .int =&gt; std.fmt.parseInt(actual_type, value_str, 10),
+                     .float =&gt; std.fmt.parseFloat(actual_type, value_str),
+-                    else =&gt; |tag| @compileError(tag ++ &quot; ** bug ** this should not happen at all&quot;),
++                    else =&gt; |tag| @compileError(@tagName(tag) ++ &quot; ** bug ** this should not happen at all&quot;),
+                 } catch {
+                     try self.print(&quot;invalid number value &#39;{s}&#39; for argument &#39;{s}&#39;\n&quot;, .{ value_str, arg_field_name });
+                     try self.printUsage(S);
+@@ -256,7 +398,7 @@ const ClaptainParser = struct {
+                 };
+                 @field(result, field.name) = value;
+             },
+-            else =&gt; |tag| @compileError(tag ++ &quot; not supported&quot;),
++            else =&gt; @compileError(&quot;type not supported: &quot; ++ @typeName(actual_type)),
+         }
+         return true;
+     }
+@@ -359,6 +501,21 @@ const ClaptainParser = struct {
+                     }
+                     try self.printAdditionalUsageInfo(print_additional_info_buf, has_default, is_required, field);
+                 },
++                .@&quot;union&quot; =&gt; |union_info| {
++                    if (union_info.tag_type) |tag_type| {
++                        const print_count = try self.printArgInfo(T, field.name, print_args_info_buf);
++                        var pos = print_count;
++                        inline for (std.meta.fields(tag_type), 0..) |tag_field, i| {
++                            _ = try self.bufPrint(print_args_info_buf[pos..], &quot;{s}&quot;, .{tag_field.name});
++                            pos += tag_field.name.len;
++                            if (i &lt; std.meta.fields(tag_type).len - 1) {
++                                _ = try self.bufPrint(print_args_info_buf[pos..], &quot;|&quot;, .{});
++                                pos += 1;
++                            }
++                        }
++                        try self.printAdditionalUsageInfo(print_additional_info_buf, has_default, is_required, field);
++                    }
++                },
+                 .int =&gt; {
+                     const print_count = try self.printArgInfo(T, field.name, print_args_info_buf);
+                     _ = try self.bufPrint(print_args_info_buf[print_count..], &quot;int&quot;, .{});
+@@ -369,7 +526,7 @@ const ClaptainParser = struct {
+                     _ = try self.bufPrint(print_args_info_buf[print_count..], &quot;float&quot;, .{});
+                     try self.printAdditionalUsageInfo(print_additional_info_buf, has_default, is_required, field);
+                 },
+-                else =&gt; |tag| @compileError(tag ++ &quot; not supported yet&quot;),
++                else =&gt; @compileError(&quot;type not supported yet&quot;),
+             }
+             try self.print(&quot;{s}\n&quot;, .{print_line_buf});
+             try self.flush();
+@@ -451,4 +608,6 @@ test {
+     _ = testing.refAllDeclsRecursive(@import(&quot;./tests/float_test.zig&quot;));
+     _ = testing.refAllDeclsRecursive(@import(&quot;./tests/metadata_test.zig&quot;));
+     _ = testing.refAllDeclsRecursive(@import(&quot;./tests/multi_arg_test.zig&quot;));
++    _ = testing.refAllDeclsRecursive(@import(&quot;./tests/positional_test.zig&quot;));
++    _ = testing.refAllDeclsRecursive(@import(&quot;./tests/subcommand_test.zig&quot;));
+ }
+diff --git a/src/tests/metadata_test.zig b/src/tests/metadata_test.zig
+index bad295c..896a275 100644
+--- a/src/tests/metadata_test.zig
++++ b/src/tests/metadata_test.zig
+@@ -129,9 +129,9 @@ pub const MultipleFieldsWithShortNames = struct {
+             .override_writer = writer,
+         }, &amp;iter);
+ 
+-        try std.testing.expectEqualSlices(u8, &quot;input.txt&quot;, result.input_file);
+-        try std.testing.expect(result.verbose == true);
+-        try std.testing.expect(result.output_file == null);
++        try std.testing.expectEqualSlices(u8, &quot;input.txt&quot;, result.args.input_file);
++        try std.testing.expect(result.args.verbose == true);
++        try std.testing.expect(result.args.output_file == null);
+     }
+ 
+     test &quot;metadata - different short name should work after another&quot; {
+@@ -144,8 +144,8 @@ pub const MultipleFieldsWithShortNames = struct {
+             .override_writer = writer,
+         }, &amp;iter);
+ 
+-        try std.testing.expectEqualSlices(u8, &quot;in.txt&quot;, result.input_file);
+-        try std.testing.expectEqualSlices(u8, &quot;out.txt&quot;, result.output_file.?);
+-        try std.testing.expect(result.verbose == true);
++        try std.testing.expectEqualSlices(u8, &quot;in.txt&quot;, result.args.input_file);
++        try std.testing.expectEqualSlices(u8, &quot;out.txt&quot;, result.args.output_file.?);
++        try std.testing.expect(result.args.verbose == true);
+     }
+-};
+\ No newline at end of file
++};
+diff --git a/src/tests/test_util.zig b/src/tests/test_util.zig
+index bef76b4..7ac9451 100644
+--- a/src/tests/test_util.zig
++++ b/src/tests/test_util.zig
+@@ -39,7 +39,7 @@ pub fn runTest(comptime A: type, comptime V: type, comptime tc: TestCase(V)) !vo
+         return err;
+     };
+ 
+-    const field = @field(value, tc.field_name);
++    const field = @field(value.args, tc.field_name);
+     const is_optional = @typeInfo(@TypeOf(field)) == .optional;
+     const actual_type = if (is_optional) @typeInfo(@TypeOf(field)).optional.child else @TypeOf(field);
+     const expected = tc.expected_value;
+
+</code></pre> 
+
+
+<p>The viewer automatically:</p>
+
+
+<ul class="normal-unordered-list normal-unordered-list-depth-1">
+<li>
+<span class="bullet primary-bullet"></span>
+<span>Parses the patch to find all files</span>
+</li> 
+<li>
+<span class="bullet primary-bullet"></span>
+<span>Shows a clickable file list on the left</span>
+</li> 
+<li>
+<span class="bullet primary-bullet"></span>
+<span>Displays the selected file's diff on the right with syntax highlighting</span>
+</li> 
+
+</ul> 
+
+</div>
+        <footer class="main-footer">
+            <div class="container">
+                <p>
+                    &copy; <span id="this-year"></span> seg4lt. Markdown to
+                    html generator written in Zig
+                </p>
+            </div>
+        </footer>
+        <script>
+            document.addEventListener("DOMContentLoaded", (event) => {
+                document.getElementById("this-year").textContent =
+                    new Date().getFullYear();
+                hljs.highlightAll();
+                initDiffViewers();
+            });
+
+            // ============================================
+            // DIFF VIEWER
+            // ============================================
+            const DIFF_ICONS = { collapsed: '▶', expanded: '◀' };
+
+            function initDiffViewers() {
+                document.querySelectorAll('pre.code-block code.language-diff, pre.code-block code.language-git-diff').forEach(codeEl => {
+                    const files = parsePatch(codeEl.textContent);
+                    if (files.length <= 1) return;
+
+                    const viewer = createDiffViewer(files);
+                    codeEl.closest('pre').replaceWith(viewer);
+                });
+            }
+
+            function createDiffViewer(files) {
+                const wrapper = createElement('div', 'diff-viewer');
+                const sidebar = createSidebar(files, wrapper);
+                const content = createContentArea(files);
+
+                wrapper.append(sidebar, content);
+                return wrapper;
+            }
+
+            function createSidebar(files, wrapper) {
+                const container = createElement('div', 'diff-file-list-container');
+                const toggle = createElement('button', 'diff-toggle-btn');
+                toggle.innerHTML = DIFF_ICONS.expanded;
+                toggle.title = 'Toggle file list';
+                toggle.onclick = () => {
+                    const collapsed = wrapper.classList.toggle('collapsed');
+                    toggle.innerHTML = collapsed ? DIFF_ICONS.collapsed : DIFF_ICONS.expanded;
+                };
+
+                const list = createElement('div', 'diff-file-list');
+                files.forEach((file, i) => {
+                    const item = createElement('div', `diff-file-item${i === 0 ? ' active' : ''}`);
+                    item.textContent = file.name;
+                    item.dataset.index = i;
+                    item.onclick = () => selectFile(wrapper, i);
+                    list.appendChild(item);
+                });
+
+                container.append(toggle, list);
+                return container;
+            }
+
+            function createContentArea(files) {
+                const area = createElement('div', 'diff-content-area');
+                files.forEach((file, i) => {
+                    const pre = createElement('pre', `code-block diff-file-content${i === 0 ? ' active' : ''}`);
+                    pre.dataset.index = i;
+                    pre.innerHTML = renderDiff(file.content);
+                    area.appendChild(pre);
+                });
+                return area;
+            }
+
+            function createElement(tag, className) {
+                const el = document.createElement(tag);
+                if (className) el.className = className;
+                return el;
+            }
+
+            function selectFile(wrapper, index) {
+                wrapper.querySelectorAll('.diff-file-item, .diff-file-content').forEach(el => {
+                    el.classList.toggle('active', +el.dataset.index === index);
+                });
+            }
+
+            function parsePatch(content) {
+                const files = [];
+                let currentFile = null;
+                let currentContent = [];
+
+                for (const line of content.split('\n')) {
+                    const fileMatch = line.match(/^diff --git a\/(.+?) b\//) ||
+                        (line.startsWith('--- a/') && !currentFile ? line.match(/^--- a\/(.+)/) : null);
+
+                    if (fileMatch) {
+                        if (currentFile) files.push({ name: currentFile, content: currentContent.join('\n') });
+                        currentFile = fileMatch[1];
+                        currentContent = [line];
+                    } else if (currentFile) {
+                        currentContent.push(line);
+                    } else if (line.startsWith('--- ')) {
+                        currentFile = line.slice(4).replace('a/', '');
+                        currentContent = [line];
+                    }
+                }
+                if (currentFile) files.push({ name: currentFile, content: currentContent.join('\n') });
+                return files;
+            }
+
+            function renderDiff(content) {
+                let oldLine = 0, newLine = 0;
+
+                return content.split('\n').map(line => {
+                    const escaped = escapeHtml(line) || ' ';
+
+                    // Hunk header - parse line numbers
+                    if (line.startsWith('@@')) {
+                        const match = line.match(/@@ -(\d+)(?:,\d+)? \+(\d+)(?:,\d+)? @@/);
+                        if (match) [, oldLine, newLine] = match.map(Number);
+                        return diffLine('hunk', '', '', escaped);
+                    }
+
+                    // Addition
+                    if (line.startsWith('+') && !line.startsWith('+++')) {
+                        return diffLine('add', '', newLine++, escaped);
+                    }
+
+                    // Removal
+                    if (line.startsWith('-') && !line.startsWith('---')) {
+                        return diffLine('remove', oldLine++, '', escaped);
+                    }
+
+                    // Header lines (no line numbers)
+                    if (/^(diff |index |--- |\+\+\+ )/.test(line)) {
+                        return diffLine('context', '', '', escaped);
+                    }
+
+                    // Context line
+                    return diffLine('context', oldLine++, newLine++, escaped);
+                }).join('');
+            }
+
+            function diffLine(type, oldNum, newNum, content) {
+                return `<span class="diff-line diff-${type}">` +
+                    `<span class="diff-line-num">${oldNum}</span>` +
+                    `<span class="diff-line-num">${newNum}</span>` +
+                    `<span class="diff-line-content">${content}</span></span>`;
+            }
+
+            function escapeHtml(str) {
+                return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+            }
+        </script>
+    </div>
+</body>
+
+</html>
