@@ -578,6 +578,88 @@ pub const DEFAULT_STYLES_CSS =
 \\    font-weight: 700;
 \\    box-shadow: 2px 2px 0px 0px var(--box-shadow-color);
 \\}
+\\/* ============================================
+\\DIFF VIEWER
+\\============================================ */
+\\.diff-viewer {
+\\    display: flex;
+\\    gap: 0;
+\\    background-color: var(--code-background-color);
+\\    box-shadow: 4px 4px 0px 0px var(--box-shadow-color);
+\\    overflow: hidden;
+\\}
+\\.diff-file-list {
+\\    min-width: 200px;
+\\    max-width: 280px;
+\\    background-color: var(--bg-background-slightly-light);
+\\    border-right: 2px solid var(--bg-background);
+\\    overflow-y: auto;
+\\    height: 750px;
+\\}
+\\.diff-file-item {
+\\    padding: 8px 12px;
+\\    cursor: pointer;
+\\    font-size: 0.8rem;
+\\    font-family: "Iosevka", monospace;
+\\    border-bottom: 1px solid var(--bg-background);
+\\    white-space: nowrap;
+\\    overflow: hidden;
+\\    text-overflow: ellipsis;
+\\    color: var(--text-subtitle);
+\\    transition: all 0.15s;
+\\}
+\\.diff-file-item:hover {
+\\    background-color: var(--code-background-color);
+\\    color: var(--text-foreground);
+\\}
+\\.diff-file-item.active {
+\\    background-color: var(--primary-color);
+\\    color: var(--bg-background);
+\\    font-weight: 700;
+\\}
+\\.diff-content-area {
+\\    flex: 1;
+\\    overflow: auto;
+\\    height: 750px;
+\\}
+\\.diff-file-content {
+\\    display: none;
+\\    margin: 0;
+\\    box-shadow: none;
+\\}
+\\.diff-file-content.active {
+\\    display: block;
+\\}
+\\.diff-file-content {
+\\    line-height: 1.4;
+\\    white-space: pre;
+\\}
+\\.diff-add {
+\\    display: block;
+\\    background-color: oklch(0.25 0.08 142);
+\\    color: oklch(0.85 0.15 142);
+\\    margin: 0;
+\\    padding: 0;
+\\}
+\\.diff-remove {
+\\    display: block;
+\\    background-color: oklch(0.25 0.08 25);
+\\    color: oklch(0.85 0.15 25);
+\\    margin: 0;
+\\    padding: 0;
+\\}
+\\.diff-hunk {
+\\    display: block;
+\\    color: var(--nav-primary-color);
+\\    background-color: oklch(0.2 0.03 255);
+\\    margin: 0;
+\\    padding: 0;
+\\}
+\\.diff-context {
+\\    display: block;
+\\    margin: 0;
+\\    padding: 0;
+\\}
 \\
 ;
 
@@ -649,7 +731,91 @@ pub const DEFAULT_BASE_HTML =
 \\                document.getElementById("this-year").textContent =
 \\                    new Date().getFullYear();
 \\                hljs.highlightAll();
+\\                initDiffViewers();
 \\            });
+\\            function initDiffViewers() {
+\\                document.querySelectorAll('pre.code-block code.language-diff, pre.code-block code.language-git-diff').forEach(codeEl => {
+\\                    const content = codeEl.textContent;
+\\                    const files = parsePatch(content);
+\\                    if (files.length <= 1) return; // Only enhance multi-file diffs
+\\                    const wrapper = document.createElement('div');
+\\                    wrapper.className = 'diff-viewer';
+\\                    // File list
+\\                    const fileList = document.createElement('div');
+\\                    fileList.className = 'diff-file-list';
+\\                    files.forEach((file, i) => {
+\\                        const item = document.createElement('div');
+\\                        item.className = 'diff-file-item' + (i === 0 ? ' active' : '');
+\\                        item.textContent = file.name;
+\\                        item.dataset.index = i;
+\\                        item.onclick = () => selectFile(wrapper, i);
+\\                        fileList.appendChild(item);
+\\                    });
+\\                    // Content area
+\\                    const contentArea = document.createElement('div');
+\\                    contentArea.className = 'diff-content-area';
+\\                    files.forEach((file, i) => {
+\\                        const pre = document.createElement('pre');
+\\                        pre.className = 'code-block diff-file-content' + (i === 0 ? ' active' : '');
+\\                        pre.dataset.index = i;
+\\                        pre.innerHTML = renderDiff(file.content);
+\\                        contentArea.appendChild(pre);
+\\                    });
+\\                    wrapper.appendChild(fileList);
+\\                    wrapper.appendChild(contentArea);
+\\                    const pre = codeEl.closest('pre');
+\\                    pre.parentNode.replaceChild(wrapper, pre);
+\\                });
+\\            }
+\\            function selectFile(wrapper, index) {
+\\                wrapper.querySelectorAll('.diff-file-item').forEach(el => {
+\\                    el.classList.toggle('active', +el.dataset.index === index);
+\\                });
+\\                wrapper.querySelectorAll('.diff-file-content').forEach(el => {
+\\                    el.classList.toggle('active', +el.dataset.index === index);
+\\                });
+\\            }
+\\            function parsePatch(content) {
+\\                const files = [];
+\\                const lines = content.split('\n');
+\\                let currentFile = null;
+\\                let currentContent = [];
+\\                for (const line of lines) {
+\\                    if (line.startsWith('diff --git') || line.startsWith('--- a/') && !currentFile) {
+\\                        if (currentFile) {
+\\                            files.push({ name: currentFile, content: currentContent.join('\n') });
+\\                        }
+\\                        const match = line.match(/diff --git a\/(.+?) b\//) || line.match(/--- a\/(.+)/);
+\\                        currentFile = match ? match[1] : 'unknown';
+\\                        currentContent = [line];
+\\                    } else if (currentFile) {
+\\                        currentContent.push(line);
+\\                    } else {
+\\                        // Handle simple diffs without git header
+\\                        if (line.startsWith('--- ') && !currentFile) {
+\\                            currentFile = line.replace('--- ', '').replace('a/', '');
+\\                            currentContent = [line];
+\\                        }
+\\                    }
+\\                }
+\\                if (currentFile) {
+\\                    files.push({ name: currentFile, content: currentContent.join('\n') });
+\\                }
+\\                return files;
+\\            }
+\\            function renderDiff(content) {
+\\                return content.split('\n').map(line => {
+\\                    const escaped = line.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;') || ' ';
+\\                    if (line.startsWith('+') && !line.startsWith('+++')) {
+\\                        return `<span class="diff-add">${escaped}</span>`;
+\\                    } else if (line.startsWith('-') && !line.startsWith('---')) {
+\\                        return `<span class="diff-remove">${escaped}</span>`;
+\\                    } else if (line.startsWith('@@')) {
+\\                        return `<span class="diff-hunk">${escaped}</span>`;
+\\                    }
+\\                    return `<span class="diff-context">${escaped}</span>`;
+\\                }).join('');
+\\            }
 \\        </script>
 \\    </div>
 \\</body>

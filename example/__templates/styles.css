@@ -11,6 +11,14 @@
     --nav-primary-color: oklch(0.62 0.18 315.9);
     --error-primary-color: oklch(0.7 0.12 18.77);
     --box-shadow-color: oklch(0.39 0 0 / 0.68);
+    --diff-viewer-height: 500px;
+
+    /* Diff colors */
+    --diff-add-bg: oklch(0.25 0.08 142);
+    --diff-add-fg: oklch(0.85 0.15 142);
+    --diff-remove-bg: oklch(0.25 0.08 25);
+    --diff-remove-fg: oklch(0.85 0.15 25);
+    --diff-hunk-bg: oklch(0.2 0.03 255);
 }
 
 * {
@@ -629,4 +637,144 @@ kbd {
     font-size: 0.875rem;
     font-weight: 700;
     box-shadow: 2px 2px 0px 0px var(--box-shadow-color);
+}
+
+/* ============================================
+DIFF VIEWER
+============================================ */
+.diff-viewer {
+    display: flex;
+    gap: 0;
+    background-color: var(--code-background-color);
+    box-shadow: 4px 4px 0px 0px var(--box-shadow-color);
+    overflow: hidden;
+}
+
+.diff-viewer.collapsed .diff-file-list {
+    display: none;
+}
+
+.diff-file-list-container {
+    display: flex;
+    flex-direction: column;
+    background-color: var(--bg-background-slightly-light);
+    border-right: 2px solid var(--bg-background);
+}
+
+.diff-toggle-btn {
+    background: var(--bg-background);
+    border: none;
+    color: var(--text-subtitle);
+    padding: 4px 8px;
+    cursor: pointer;
+    font-size: 0.7rem;
+    transition: all 0.15s;
+}
+
+.diff-toggle-btn:hover {
+    background: var(--code-background-color);
+    color: var(--text-foreground);
+}
+
+.diff-file-list {
+    min-width: 200px;
+    max-width: 280px;
+    overflow-y: auto;
+    flex: 1;
+}
+
+.diff-file-item {
+    padding: 8px 12px;
+    cursor: pointer;
+    font-size: 0.8rem;
+    font-family: "Iosevka", monospace;
+    border-bottom: 1px solid var(--bg-background);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    color: var(--text-subtitle);
+    transition: all 0.15s;
+}
+
+.diff-file-item:hover {
+    background-color: var(--code-background-color);
+    color: var(--text-foreground);
+}
+
+.diff-file-item.active {
+    background-color: var(--primary-color);
+    color: var(--bg-background);
+    font-weight: 700;
+}
+
+.diff-content-area {
+    flex: 1;
+    overflow: auto;
+    height: var(--diff-viewer-height);
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+}
+
+.diff-content-area::-webkit-scrollbar {
+    display: none;
+}
+
+.diff-file-content {
+    display: none;
+    margin: 0;
+    box-shadow: none;
+    line-height: 1.4;
+    white-space: pre;
+}
+
+.diff-file-content.active {
+    display: block;
+    width: max-content;
+    min-width: 100%;
+}
+
+.diff-add {
+    background-color: var(--diff-add-bg);
+    color: var(--diff-add-fg);
+}
+
+.diff-remove {
+    background-color: var(--diff-remove-bg);
+    color: var(--diff-remove-fg);
+}
+
+.diff-hunk {
+    color: var(--nav-primary-color);
+    background-color: var(--diff-hunk-bg);
+}
+
+.diff-context {
+    background-color: transparent;
+}
+
+.diff-line {
+    display: grid;
+    grid-template-columns: 40px 40px minmax(0, 1fr);
+    min-width: 100%;
+}
+
+.diff-line {
+    display: grid;
+    grid-template-columns: 40px 40px minmax(0, 1fr);
+    min-width: 100%;
+}
+
+.diff-line-num {
+    padding: 0 8px;
+    text-align: right;
+    color: var(--text-subtitle);
+    user-select: none;
+    opacity: 0.6;
+    border-right: 1px solid var(--bg-background);
+}
+
+.diff-line-content {
+    padding-left: 8px;
+    padding-right: 16px;
+    white-space: pre;
 }
