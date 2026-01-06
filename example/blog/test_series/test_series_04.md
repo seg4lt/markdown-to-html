@@ -104,3 +104,4 @@ GROUP BY u.id, u.username
 HAVING COUNT(p.id) > 5
 ORDER BY post_count DESC;
 ```
+

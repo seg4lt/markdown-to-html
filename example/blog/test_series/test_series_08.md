@@ -60,3 +60,4 @@
 | 1 | Alice | alice@example.com | Admin | IT | New York | Active | 2025-12-22 |
 | 2 | Bob | bob@example.com | User | Sales | London | Active | 2025-12-21 |
 | 3 | Charlie | charlie@example.com | Manager | Marketing | Tokyo | Inactive | 2025-12-15 |
+

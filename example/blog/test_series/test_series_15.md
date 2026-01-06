@@ -169,3 +169,4 @@ See also [test series 01](./test_series_01.md) and [test series 14](./test_serie
 This document demonstrates the **full range** of markdown capabilities, from simple *formatting* to complex nested structures with `code`, [links](https://example.com), tables, and more.
 
 > Final thought: *The complexity* of markdown allows for **rich documentation** while maintaining `readability` in source form.
+

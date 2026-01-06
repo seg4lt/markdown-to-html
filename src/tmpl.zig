@@ -56,6 +56,13 @@ pub const DEFAULT_STYLES_CSS =
 \\    --nav-primary-color: oklch(0.62 0.18 315.9);
 \\    --error-primary-color: oklch(0.7 0.12 18.77);
 \\    --box-shadow-color: oklch(0.39 0 0 / 0.68);
+\\    --diff-viewer-height: 500px;
+\\    /* Diff colors */
+\\    --diff-add-bg: oklch(0.25 0.08 142);
+\\    --diff-add-fg: oklch(0.85 0.15 142);
+\\    --diff-remove-bg: oklch(0.25 0.08 25);
+\\    --diff-remove-fg: oklch(0.85 0.15 25);
+\\    --diff-hunk-bg: oklch(0.2 0.03 255);
 \\}
 \\* {
 \\    margin: 0;
@@ -588,13 +595,33 @@ pub const DEFAULT_STYLES_CSS =
 \\    box-shadow: 4px 4px 0px 0px var(--box-shadow-color);
 \\    overflow: hidden;
 \\}
+\\.diff-viewer.collapsed .diff-file-list {
+\\    display: none;
+\\}
+\\.diff-file-list-container {
+\\    display: flex;
+\\    flex-direction: column;
+\\    background-color: var(--bg-background-slightly-light);
+\\    border-right: 2px solid var(--bg-background);
+\\}
+\\.diff-toggle-btn {
+\\    background: var(--bg-background);
+\\    border: none;
+\\    color: var(--text-subtitle);
+\\    padding: 4px 8px;
+\\    cursor: pointer;
+\\    font-size: 0.7rem;
+\\    transition: all 0.15s;
+\\}
+\\.diff-toggle-btn:hover {
+\\    background: var(--code-background-color);
+\\    color: var(--text-foreground);
+\\}
 \\.diff-file-list {
 \\    min-width: 200px;
 \\    max-width: 280px;
-\\    background-color: var(--bg-background-slightly-light);
-\\    border-right: 2px solid var(--bg-background);
 \\    overflow-y: auto;
-\\    height: 750px;
+\\    flex: 1;
 \\}
 \\.diff-file-item {
 \\    padding: 8px 12px;
@@ -620,45 +647,62 @@ pub const DEFAULT_STYLES_CSS =
 \\.diff-content-area {
 \\    flex: 1;
 \\    overflow: auto;
-\\    height: 750px;
+\\    height: var(--diff-viewer-height);
+\\    scrollbar-width: none;
+\\    -ms-overflow-style: none;
+\\}
+\\.diff-content-area::-webkit-scrollbar {
+\\    display: none;
 \\}
 \\.diff-file-content {
 \\    display: none;
 \\    margin: 0;
 \\    box-shadow: none;
-\\}
-\\.diff-file-content.active {
-\\    display: block;
-\\}
-\\.diff-file-content {
 \\    line-height: 1.4;
 \\    white-space: pre;
 \\}
-\\.diff-add {
+\\.diff-file-content.active {
 \\    display: block;
-\\    background-color: oklch(0.25 0.08 142);
-\\    color: oklch(0.85 0.15 142);
-\\    margin: 0;
-\\    padding: 0;
+\\    width: max-content;
+\\    min-width: 100%;
+\\}
+\\.diff-add {
+\\    background-color: var(--diff-add-bg);
+\\    color: var(--diff-add-fg);
 \\}
 \\.diff-remove {
-\\    display: block;
-\\    background-color: oklch(0.25 0.08 25);
-\\    color: oklch(0.85 0.15 25);
-\\    margin: 0;
-\\    padding: 0;
+\\    background-color: var(--diff-remove-bg);
+\\    color: var(--diff-remove-fg);
 \\}
 \\.diff-hunk {
-\\    display: block;
 \\    color: var(--nav-primary-color);
-\\    background-color: oklch(0.2 0.03 255);
-\\    margin: 0;
-\\    padding: 0;
+\\    background-color: var(--diff-hunk-bg);
 \\}
 \\.diff-context {
-\\    display: block;
-\\    margin: 0;
-\\    padding: 0;
+\\    background-color: transparent;
+\\}
+\\.diff-line {
+\\    display: grid;
+\\    grid-template-columns: 40px 40px minmax(0, 1fr);
+\\    min-width: 100%;
+\\}
+\\.diff-line {
+\\    display: grid;
+\\    grid-template-columns: 40px 40px minmax(0, 1fr);
+\\    min-width: 100%;
+\\}
+\\.diff-line-num {
+\\    padding: 0 8px;
+\\    text-align: right;
+\\    color: var(--text-subtitle);
+\\    user-select: none;
+\\    opacity: 0.6;
+\\    border-right: 1px solid var(--bg-background);
+\\}
+\\.diff-line-content {
+\\    padding-left: 8px;
+\\    padding-right: 16px;
+\\    white-space: pre;
 \\}
 \\
 ;
@@ -733,88 +777,120 @@ pub const DEFAULT_BASE_HTML =
 \\                hljs.highlightAll();
 \\                initDiffViewers();
 \\            });
+\\            // ============================================
+\\            // DIFF VIEWER
+\\            // ============================================
+\\            const DIFF_ICONS = { collapsed: '▶', expanded: '◀' };
 \\            function initDiffViewers() {
 \\                document.querySelectorAll('pre.code-block code.language-diff, pre.code-block code.language-git-diff').forEach(codeEl => {
-\\                    const content = codeEl.textContent;
-\\                    const files = parsePatch(content);
-\\                    if (files.length <= 1) return; // Only enhance multi-file diffs
-\\                    const wrapper = document.createElement('div');
-\\                    wrapper.className = 'diff-viewer';
-\\                    // File list
-\\                    const fileList = document.createElement('div');
-\\                    fileList.className = 'diff-file-list';
-\\                    files.forEach((file, i) => {
-\\                        const item = document.createElement('div');
-\\                        item.className = 'diff-file-item' + (i === 0 ? ' active' : '');
-\\                        item.textContent = file.name;
-\\                        item.dataset.index = i;
-\\                        item.onclick = () => selectFile(wrapper, i);
-\\                        fileList.appendChild(item);
-\\                    });
-\\                    // Content area
-\\                    const contentArea = document.createElement('div');
-\\                    contentArea.className = 'diff-content-area';
-\\                    files.forEach((file, i) => {
-\\                        const pre = document.createElement('pre');
-\\                        pre.className = 'code-block diff-file-content' + (i === 0 ? ' active' : '');
-\\                        pre.dataset.index = i;
-\\                        pre.innerHTML = renderDiff(file.content);
-\\                        contentArea.appendChild(pre);
-\\                    });
-\\                    wrapper.appendChild(fileList);
-\\                    wrapper.appendChild(contentArea);
-\\                    const pre = codeEl.closest('pre');
-\\                    pre.parentNode.replaceChild(wrapper, pre);
+\\                    const files = parsePatch(codeEl.textContent);
+\\                    if (files.length <= 1) return;
+\\                    const viewer = createDiffViewer(files);
+\\                    codeEl.closest('pre').replaceWith(viewer);
 \\                });
 \\            }
-\\            function selectFile(wrapper, index) {
-\\                wrapper.querySelectorAll('.diff-file-item').forEach(el => {
-\\                    el.classList.toggle('active', +el.dataset.index === index);
+\\            function createDiffViewer(files) {
+\\                const wrapper = createElement('div', 'diff-viewer');
+\\                const sidebar = createSidebar(files, wrapper);
+\\                const content = createContentArea(files);
+\\                wrapper.append(sidebar, content);
+\\                return wrapper;
+\\            }
+\\            function createSidebar(files, wrapper) {
+\\                const container = createElement('div', 'diff-file-list-container');
+\\                const toggle = createElement('button', 'diff-toggle-btn');
+\\                toggle.innerHTML = DIFF_ICONS.expanded;
+\\                toggle.title = 'Toggle file list';
+\\                toggle.onclick = () => {
+\\                    const collapsed = wrapper.classList.toggle('collapsed');
+\\                    toggle.innerHTML = collapsed ? DIFF_ICONS.collapsed : DIFF_ICONS.expanded;
+\\                };
+\\                const list = createElement('div', 'diff-file-list');
+\\                files.forEach((file, i) => {
+\\                    const item = createElement('div', `diff-file-item${i === 0 ? ' active' : ''}`);
+\\                    item.textContent = file.name;
+\\                    item.dataset.index = i;
+\\                    item.onclick = () => selectFile(wrapper, i);
+\\                    list.appendChild(item);
 \\                });
-\\                wrapper.querySelectorAll('.diff-file-content').forEach(el => {
+\\                container.append(toggle, list);
+\\                return container;
+\\            }
+\\            function createContentArea(files) {
+\\                const area = createElement('div', 'diff-content-area');
+\\                files.forEach((file, i) => {
+\\                    const pre = createElement('pre', `code-block diff-file-content${i === 0 ? ' active' : ''}`);
+\\                    pre.dataset.index = i;
+\\                    pre.innerHTML = renderDiff(file.content);
+\\                    area.appendChild(pre);
+\\                });
+\\                return area;
+\\            }
+\\            function createElement(tag, className) {
+\\                const el = document.createElement(tag);
+\\                if (className) el.className = className;
+\\                return el;
+\\            }
+\\            function selectFile(wrapper, index) {
+\\                wrapper.querySelectorAll('.diff-file-item, .diff-file-content').forEach(el => {
 \\                    el.classList.toggle('active', +el.dataset.index === index);
 \\                });
 \\            }
 \\            function parsePatch(content) {
 \\                const files = [];
-\\                const lines = content.split('\n');
 \\                let currentFile = null;
 \\                let currentContent = [];
-\\                for (const line of lines) {
-\\                    if (line.startsWith('diff --git') || line.startsWith('--- a/') && !currentFile) {
-\\                        if (currentFile) {
-\\                            files.push({ name: currentFile, content: currentContent.join('\n') });
-\\                        }
-\\                        const match = line.match(/diff --git a\/(.+?) b\//) || line.match(/--- a\/(.+)/);
-\\                        currentFile = match ? match[1] : 'unknown';
+\\                for (const line of content.split('\n')) {
+\\                    const fileMatch = line.match(/^diff --git a\/(.+?) b\//) ||
+\\                        (line.startsWith('--- a/') && !currentFile ? line.match(/^--- a\/(.+)/) : null);
+\\                    if (fileMatch) {
+\\                        if (currentFile) files.push({ name: currentFile, content: currentContent.join('\n') });
+\\                        currentFile = fileMatch[1];
 \\                        currentContent = [line];
 \\                    } else if (currentFile) {
 \\                        currentContent.push(line);
-\\                    } else {
-\\                        // Handle simple diffs without git header
-\\                        if (line.startsWith('--- ') && !currentFile) {
-\\                            currentFile = line.replace('--- ', '').replace('a/', '');
-\\                            currentContent = [line];
-\\                        }
+\\                    } else if (line.startsWith('--- ')) {
+\\                        currentFile = line.slice(4).replace('a/', '');
+\\                        currentContent = [line];
 \\                    }
 \\                }
-\\                if (currentFile) {
-\\                    files.push({ name: currentFile, content: currentContent.join('\n') });
-\\                }
+\\                if (currentFile) files.push({ name: currentFile, content: currentContent.join('\n') });
 \\                return files;
 \\            }
 \\            function renderDiff(content) {
+\\                let oldLine = 0, newLine = 0;
 \\                return content.split('\n').map(line => {
-\\                    const escaped = line.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;') || ' ';
-\\                    if (line.startsWith('+') && !line.startsWith('+++')) {
-\\                        return `<span class="diff-add">${escaped}</span>`;
-\\                    } else if (line.startsWith('-') && !line.startsWith('---')) {
-\\                        return `<span class="diff-remove">${escaped}</span>`;
-\\                    } else if (line.startsWith('@@')) {
-\\                        return `<span class="diff-hunk">${escaped}</span>`;
+\\                    const escaped = escapeHtml(line) || ' ';
+\\                    // Hunk header - parse line numbers
+\\                    if (line.startsWith('@@')) {
+\\                        const match = line.match(/@@ -(\d+)(?:,\d+)? \+(\d+)(?:,\d+)? @@/);
+\\                        if (match) [, oldLine, newLine] = match.map(Number);
+\\                        return diffLine('hunk', '', '', escaped);
 \\                    }
-\\                    return `<span class="diff-context">${escaped}</span>`;
+\\                    // Addition
+\\                    if (line.startsWith('+') && !line.startsWith('+++')) {
+\\                        return diffLine('add', '', newLine++, escaped);
+\\                    }
+\\                    // Removal
+\\                    if (line.startsWith('-') && !line.startsWith('---')) {
+\\                        return diffLine('remove', oldLine++, '', escaped);
+\\                    }
+\\                    // Header lines (no line numbers)
+\\                    if (/^(diff |index |--- |\+\+\+ )/.test(line)) {
+\\                        return diffLine('context', '', '', escaped);
+\\                    }
+\\                    // Context line
+\\                    return diffLine('context', oldLine++, newLine++, escaped);
 \\                }).join('');
+\\            }
+\\            function diffLine(type, oldNum, newNum, content) {
+\\                return `<span class="diff-line diff-${type}">` +
+\\                    `<span class="diff-line-num">${oldNum}</span>` +
+\\                    `<span class="diff-line-num">${newNum}</span>` +
+\\                    `<span class="diff-line-content">${content}</span></span>`;
+\\            }
+\\            function escapeHtml(str) {
+\\                return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 \\            }
 \\        </script>
 \\    </div>
